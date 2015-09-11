@@ -20,3 +20,7 @@ helloSpark/.cache-main
 helloSpark/.classpath
 
 helloSpark/.project
+
+streaming-twitter/.cache-main
+
+streaming-twitter/.settings/org.scala-ide.sdt.core.prefs
