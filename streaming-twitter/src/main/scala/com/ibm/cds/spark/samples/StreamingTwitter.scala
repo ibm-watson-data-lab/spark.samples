@@ -80,7 +80,7 @@ object StreamingTwitter {
       ("cloudant.save", Option(System.getProperty("cloudant.save")).getOrElse("false") )
   )
   
-  val sentimentFactors = Map[String, String](
+  val sentimentFactors = Array(
     ("Cheerfulness", "Cheerfulness" ), 
     ("Negative", "Negative"), 
     ("Anger", "Anger"), 
@@ -170,7 +170,7 @@ object StreamingTwitter {
           scoreMap.put( result.id, result.normalized_score )
         }
       }
-      val colValues = List[Any](
+      var colValues = Array[Any](
         status.getUser.getName, //author
         status.getCreatedAt.toString,   //date
         status.getUser.getLang,  //Lang
@@ -178,9 +178,11 @@ object StreamingTwitter {
         Option(status.getGeoLocation).map{ _.getLatitude}.getOrElse(0),      //lat
         Option(status.getGeoLocation).map{_.getLongitude}.getOrElse(0)    //long
       )
-      colValues :+ sentimentFactors.mapValues { id => scoreMap.get( id ).getOrElse( 0 ) }
+
+      colValues = colValues ++ sentimentFactors.map { f => (Math.round( scoreMap.get( f._2 ).getOrElse( 0.0 ) * 10000.0) / 10000.0) * 100.0  }
+
       //Return [Row, (sentiment, status)]
-      (Row(colValues),(sentiment,status))
+      (Row(colValues.toArray:_*),(sentiment,status))
     })
 
     rowTweets.foreachRDD( rdd => {
