@@ -109,6 +109,7 @@ object StreamingTwitter {
   }
   
   def setConfig(key:String, value:String){
+    System.setProperty(key, value )
     config.put( key, value )
   }
   
@@ -126,96 +127,116 @@ object StreamingTwitter {
     Logger.getLogger("org.eclipse.jetty.server").setLevel(Level.OFF)
     
     workingRDD = sc.emptyRDD
+    //Broadcast the config to each worker node
+    val broadcastVar = sc.broadcast(config)
     
     ssc = new StreamingContext( sc, Seconds(5) )
     config.foreach( (t:(String,String)) => 
       if ( t._1.startsWith( "twitter4j") ) System.setProperty( t._1, t._2 )
     )
     
-    sqlContext = new SQLContext(sc)
-    val keys = config.get("tweets.key").get.split(",");
-    var stream = org.apache.spark.streaming.twitter.TwitterUtils.createStream( ssc, None );
-    
-    if ( schemaTweets == null ){
-      val schemaString = "author date lang text lat:int long:int"
-      schemaTweets =
-        StructType(
-          schemaString.split(" ").map(
-            fieldName => {
-              val ar = fieldName.split(":")
-              StructField(
-                  ar.lift(0).get, 
-                  ar.lift(1).getOrElse("string") match{
-                    case "int" => IntegerType
-                    case _ => StringType
-                  },
-                  true)
-            }
-          ).union( 
-              sentimentFactors.map( f => StructField( f._1, DoubleType )).toArray[StructField]
+    try{
+      sqlContext = new SQLContext(sc)
+      val keys = config.get("tweets.key").get.split(",");
+      var stream = org.apache.spark.streaming.twitter.TwitterUtils.createStream( ssc, None );
+      
+      if ( schemaTweets == null ){
+        val schemaString = "author date lang text lat:int long:int"
+        schemaTweets =
+          StructType(
+            schemaString.split(" ").map(
+              fieldName => {
+                val ar = fieldName.split(":")
+                StructField(
+                    ar.lift(0).get, 
+                    ar.lift(1).getOrElse("string") match{
+                      case "int" => IntegerType
+                      case _ => StringType
+                    },
+                    true)
+              }
+            ).union( 
+                sentimentFactors.map( f => StructField( f._1, DoubleType )).toArray[StructField]
+            )
           )
+      }
+      val tweets = stream.filter { status => 
+        Option(status.getUser).flatMap[String] { u => Option(u.getLang) }.getOrElse("").startsWith("en") && ( keys.isEmpty || keys.exists{status.getText.contains(_)})
+      }
+        
+      val rowTweets = tweets.map(status=> {
+        lazy val client = PooledHttp1Client()
+        var sentiment:Sentiment = null
+        var exception:String = ""
+        try{
+          sentiment = callToneAnalyzer(client, status, broadcastVar.value.get("watson.tone.url").get, broadcastVar.value.get("watson.tone.username").get, broadcastVar.value.get("watson.tone.password").get)    
+        }catch{
+          case e : Exception => {
+            val s = broadcastVar.value.get("watson.tone.url").get + "/v1/tone"
+            exception = s + " : " + e.getMessage; 
+            e.printStackTrace
+          }
+        }
+        
+        var colValues = Array[Any](
+          status.getUser.getName, //author
+          status.getCreatedAt.toString,   //date
+          status.getUser.getLang,  //Lang
+          status.getText,               //text
+          Option(status.getGeoLocation).map{ _.getLatitude}.getOrElse(0),      //lat
+          Option(status.getGeoLocation).map{_.getLongitude}.getOrElse(0)    //long
+          //exception
         )
-    }
-    val tweets = stream.filter { status => 
-      Option(status.getUser).flatMap[String] { u => Option(u.getLang) }.getOrElse("").startsWith("en") && ( keys.isEmpty || keys.exists{status.getText.contains(_)})
-    }
-    
-    val saveToCloudant = config.get("cloudant.save").get.toBoolean  
-    lazy val client = PooledHttp1Client()
-    val rowTweets = tweets.map(status=> {
-      val sentiment = callToneAnalyzer(client, status)
-      var scoreMap : Map[String, Double] = Map()
-      for ( tone <- Option( sentiment.children ).getOrElse( Seq() ) ){
-        for ( result <- Option( tone.children ).getOrElse( Seq() ) ){
-          scoreMap.put( result.id, result.normalized_score )
-        }
-      }
-      var colValues = Array[Any](
-        status.getUser.getName, //author
-        status.getCreatedAt.toString,   //date
-        status.getUser.getLang,  //Lang
-        status.getText,               //text
-        Option(status.getGeoLocation).map{ _.getLatitude}.getOrElse(0),      //lat
-        Option(status.getGeoLocation).map{_.getLongitude}.getOrElse(0)    //long
-      )
-
-      colValues = colValues ++ sentimentFactors.map { f => (Math.round( scoreMap.get( f._2 ).getOrElse( 0.0 ) * 10000.0) / 10000.0) * 100.0  }
-
-      //Return [Row, (sentiment, status)]
-      (Row(colValues.toArray:_*),(sentiment,status))
-    })
-
-    rowTweets.foreachRDD( rdd => {
-      try{
-        if ( rdd.count() > 0 ){
-          workingRDD = sc.parallelize( rdd.map( t => t._1 ).collect()).union( workingRDD )
-        }
-      }catch{
-          case e: Exception => e.printStackTrace()
-      }
-
-      if ( saveToCloudant ){
-        rdd.foreachPartition { iterator => 
-          var db: CouchDbApi = null;
-          val couch = CouchDb( config.get("cloudant.hostName").get, 
-              config.get("cloudant.port").get.toInt, 
-              config.get("cloudant.https").get.toBoolean, 
-              config.get("cloudant.username").get, 
-              config.get("cloudant.password").get);
-          var t = couch.dbs.create("spark-streaming-twitter")
-          t.attemptRun
-          val typeMapping = TypeMapping(classOf[Tweet] -> "Tweet")
-          db = couch.db("spark-streaming-twitter", typeMapping)
-          iterator.foreach( t => {
-              saveTweetToCloudant( client, db, t._2._2, t._2._1 )
+        
+        var scoreMap : Map[String, Double] = Map()
+        if ( sentiment != null ){
+          for ( tone <- Option( sentiment.children ).getOrElse( Seq() ) ){
+            for ( result <- Option( tone.children ).getOrElse( Seq() ) ){
+              scoreMap.put( result.id, result.normalized_score )
             }
-          )
+          }
         }
-      }
+             
+        colValues = colValues ++ sentimentFactors.map { f => (Math.round( scoreMap.get( f._2 ).getOrElse( 0.0 ) * 10000.0) / 10000.0) * 100.0  }
+        //Return [Row, (sentiment, status)]
+        (Row(colValues.toArray:_*),(sentiment, status))
+      })
+  
+      rowTweets.foreachRDD( rdd => {
+        try{
+          if ( rdd.count() > 0 ){
+            workingRDD = sc.parallelize( rdd.map( t => t._1 ).collect()).union( workingRDD )
+          }
+        }catch{
+            case e: Exception => e.printStackTrace()
+        }
+        val saveToCloudant = broadcastVar.value.get("cloudant.save").get.toBoolean
+        if ( saveToCloudant ){
+          rdd.foreachPartition { iterator => 
+            lazy val client = PooledHttp1Client()
+            var db: CouchDbApi = null;
+            val couch = CouchDb( broadcastVar.value.get("cloudant.hostName").get, 
+                broadcastVar.value.get("cloudant.port").get.toInt, 
+                broadcastVar.value.get("cloudant.https").get.toBoolean, 
+                broadcastVar.value.get("cloudant.username").get, 
+                broadcastVar.value.get("cloudant.password").get);
+            var t = couch.dbs.create("spark-streaming-twitter")
+            t.attemptRun
+            val typeMapping = TypeMapping(classOf[Tweet] -> "Tweet")
+            db = couch.db("spark-streaming-twitter", typeMapping)
+            iterator.foreach( t => {
+                saveTweetToCloudant( client, db, t._2._2, t._2._1 )
+              }
+            )
+          }
+        }
+  
+      })
 
-    })
-   
-    val workingTweets = tweets.window( Seconds(10) )
+    }catch{
+      case e : Exception => e.printStackTrace
+      return
+    }
     ssc.start()
     
     println("Twitter stream started");
@@ -242,13 +263,13 @@ object StreamingTwitter {
   case class Geo( lat: Double, long: Double )
   case class Tweet(author: String, date: String, language: String, text: String, geo : Geo, sentiment : Sentiment )
   
-  def callToneAnalyzer( client: Client, status:Status ) : Sentiment = {
+  def callToneAnalyzer( client: Client, status:Status, toneUrl: String, toneUsername: String, tonePassword: String ) : Sentiment = {
     logger.trace("Calling sentiment from Watson Tone Analyzer: " + status.getText())
     //Get Sentiment on the tweet
     val sentimentResults: String = 
       EntityEncoder[String].toEntity("{\"text\": \"" + StringEscapeUtils.escapeJson( status.getText ) + "\"}" ).flatMap { 
         entity =>
-          val s = config.get("watson.tone.url").get + "/v1/tone"
+          val s = toneUrl + "/v1/tone"
           val toneuri: Uri = Uri.fromString( s ).getOrElse( null )
           client(
               Request( 
@@ -256,7 +277,7 @@ object StreamingTwitter {
                   uri = toneuri,
                   headers = Headers(
                       Authorization(
-                        BasicCredentials(config.get("watson.tone.username").get, config.get("watson.tone.password").get)
+                        BasicCredentials(toneUsername, tonePassword)
                       ),
                       Header("Accept", "application/json; charset=utf-8"),
                       Header("Content-Type", "application/json")
