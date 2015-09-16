@@ -26,4 +26,4 @@ assemblyMergeStrategy in assembly := {
 
 assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false)
 
-resolvers += "Local couchdb-scala repo" at "file:///Users/dtaieb/watsondev/workspaces/cds_workspace/couchdb-scala/target/scala-2.10/releases"
+resolvers += "Local couchdb-scala repo" at (baseDirectory.value / "lib/couchdb-scala").toURI.toString

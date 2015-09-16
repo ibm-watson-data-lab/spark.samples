@@ -109,7 +109,6 @@ object StreamingTwitter {
   }
   
   def setConfig(key:String, value:String){
-    System.setProperty(key, value )
     config.put( key, value )
   }
   
