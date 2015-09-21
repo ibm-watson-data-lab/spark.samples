@@ -42,6 +42,7 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.rdd.RDD
 import org.apache.spark.rdd.EmptyRDD
+import com.google.common.base.CharMatcher
 
 
 
@@ -160,7 +161,9 @@ object StreamingTwitter {
           )
       }
       val tweets = stream.filter { status => 
-        Option(status.getUser).flatMap[String] { u => Option(u.getLang) }.getOrElse("").startsWith("en") && ( keys.isEmpty || keys.exists{status.getText.contains(_)})
+        Option(status.getUser).flatMap[String] { 
+          u => Option(u.getLang) 
+        }.getOrElse("").startsWith("en") && CharMatcher.ASCII.matchesAllOf(status.getText) && ( keys.isEmpty || keys.exists{status.getText.contains(_)})
       }
         
       val rowTweets = tweets.map(status=> {
