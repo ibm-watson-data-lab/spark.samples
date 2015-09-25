@@ -12,13 +12,15 @@ libraryDependencies ++= {
     "org.apache.spark" %%  "spark-streaming"	  %  sparkVersion % "provided",
     "org.apache.spark" %%  "spark-streaming-twitter"  %  sparkVersion,
     "org.apache.spark" %% "spark-repl" % sparkVersion % "provided",
-    "com.ibm" %% "couchdb-scala" % "0.5.3"
+    "com.ibm" %% "couchdb-scala" % "0.5.3",
+    "com.twitter" % "parquet-format" % "1.0.0-t2"
   )
 }
 
 assemblyMergeStrategy in assembly := {
   case PathList("org", "apache", "spark", xs @ _*) => MergeStrategy.first
   case PathList("scala", xs @ _*) => MergeStrategy.discard
+  case PathList("META-INF", "maven", "org.slf4j", xs @ _* ) => MergeStrategy.first
   case x =>
     val oldStrategy = (assemblyMergeStrategy in assembly).value
     oldStrategy(x)
