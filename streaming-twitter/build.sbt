@@ -12,8 +12,7 @@ libraryDependencies ++= {
     "org.apache.spark" %%  "spark-streaming"	  %  sparkVersion % "provided",
     "org.apache.spark" %%  "spark-streaming-twitter"  %  sparkVersion,
     "org.apache.spark" %% "spark-repl" % sparkVersion % "provided",
-    "com.ibm" %% "couchdb-scala" % "0.5.3",
-    "com.twitter" % "parquet-format" % "1.0.0-t2"
+    "com.ibm" %% "couchdb-scala" % "0.5.3"
   )
 }
 

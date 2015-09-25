@@ -43,6 +43,7 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.rdd.RDD
 import org.apache.spark.rdd.EmptyRDD
 import com.google.common.base.CharMatcher
+import scala.math.BigDecimal
 
 
 
@@ -200,7 +201,7 @@ object StreamingTwitter {
           }
         }
              
-        colValues = colValues ++ sentimentFactors.map { f => (Math.round( scoreMap.get( f._2 ).getOrElse( 0.0 ) * 10000.0) / 10000.0) * 100.0  }
+        colValues = colValues ++ sentimentFactors.map { f => BigDecimal(scoreMap.get(f._2).getOrElse(0.0)).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble  }
         //Return [Row, (sentiment, status)]
         (Row(colValues.toArray:_*),(sentiment, status))
       })
