@@ -186,8 +186,8 @@ object StreamingTwitter {
           status.getCreatedAt.toString,   //date
           status.getUser.getLang,  //Lang
           status.getText,               //text
-          Option(status.getGeoLocation).map{ _.getLatitude}.getOrElse(0),      //lat
-          Option(status.getGeoLocation).map{_.getLongitude}.getOrElse(0)    //long
+          Option(status.getGeoLocation).map{ _.getLatitude}.getOrElse(0.0),      //lat
+          Option(status.getGeoLocation).map{_.getLongitude}.getOrElse(0.0)    //long
           //exception
         )
         
@@ -309,8 +309,8 @@ object StreamingTwitter {
                 status.getUser().getLang(),
                 status.getText(),
                 Geo( 
-                    Option(status.getGeoLocation).map{ _.getLatitude}.getOrElse(0), 
-                    Option(status.getGeoLocation).map{_.getLongitude}.getOrElse(0) 
+                    Option(status.getGeoLocation).map{ _.getLatitude}.getOrElse(0.0), 
+                    Option(status.getGeoLocation).map{_.getLongitude}.getOrElse(0.0) 
                 ),
                 sentiment
             ) 
