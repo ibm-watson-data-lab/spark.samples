@@ -141,7 +141,7 @@ object StreamingTwitter {
       var stream = org.apache.spark.streaming.twitter.TwitterUtils.createStream( ssc, None );
       
       if ( schemaTweets == null ){
-        val schemaString = "author date lang text lat:int long:int"
+        val schemaString = "author date lang text lat:double long:double"
         schemaTweets =
           StructType(
             schemaString.split(" ").map(
@@ -151,6 +151,7 @@ object StreamingTwitter {
                     ar.lift(0).get, 
                     ar.lift(1).getOrElse("string") match{
                       case "int" => IntegerType
+                      case "double" => DoubleType
                       case _ => StringType
                     },
                     true)
