@@ -201,7 +201,7 @@ object StreamingTwitter {
           }
         }
              
-        colValues = colValues ++ sentimentFactors.map { f => BigDecimal(scoreMap.get(f._2).getOrElse(0.0)).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble  }
+        colValues = colValues ++ sentimentFactors.map { f => (BigDecimal(scoreMap.get(f._2).getOrElse(0.0)).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble) * 100.0  }
         //Return [Row, (sentiment, status)]
         (Row(colValues.toArray:_*),(sentiment, status))
       })
