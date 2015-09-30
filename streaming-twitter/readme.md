@@ -2,14 +2,16 @@ Use Spark Streaming in combination with IBM Watson to perform sentiment analysis
 
 # Introduction   
 
-How's your relationship with your customers?  You can track how consumers feel (positive or negative on multiple tone dimensions e.g. Anger, Cheerfulness, etc...) about you, your products or your company based on their tweets.  To get real-time sentiment analysis, deploy the **Spark Streaming with Twitter and Watson** app on Bluemix and use its Notebook to analyze public opinion.
+How's your relationship with your customers?  You can track how consumers feel about you, your products, or your company based on their tweets.  Guage positive or negative emotions measured across multiple tone dimensions, like anger, cheerfulness, openness, and more. To get real-time sentiment analysis, deploy the **Spark Streaming with Twitter and Watson** app on Bluemix and use its Notebook to analyze public opinion.
 
-This tutorial covers how to build this app from the source code, configure it for deployment on Bluemix and analyze the data to produce compelling, "insight-revealing" visualizations
+This tutorial covers how to build this app from the source code, configure it for deployment on Bluemix, and analyze the data to produce compelling, insight-revealing visualizations.
 
  
 ##How it works
 
-This sample app uses Spark Streaming to create a stream that captures live tweets from Twitter. You can optionally filter the tweets that contain the hashtag(s) of your choice. The tweet data is enriched in real time with various sentiment scores provided by the Watson Tone Analyzer service (available on Bluemix). This service provides insight into sentiment, or how the author feels. We then use Spark SQL to load the data into a DataFrame for further analysis. You can also save the data into a Cloudant database or a parquet file. and use it later to track how you're trending over longer periods.  
+This sample app uses Spark Streaming to create a feed that captures live tweets from Twitter. You can optionally filter the tweets that contain the hashtag(s) of your choice. The tweet data is enriched in real time with various sentiment scores provided by the Watson Tone Analyzer service (available on Bluemix). This service provides insight into sentiment, or how the author feels. We then use Spark SQL to load the data into a DataFrame for further analysis. You can also save the data into a Cloudant database or a parquet file and use it later to track how you're trending over longer periods.  
+The following diagram provides a high level architecture of the application:
+![Twitter + Watson high level architecture](http://developer.ibm.com/clouddataservices/wp-content/uploads/sites/47/2015/09/Spark-Streaming-Twitter-architecture-1024x578.png)
 
 
 ##Before you begin
@@ -22,10 +24,10 @@ If you haven't already, read and follow the [tutorial on how to build a custom l
 1. Clone the source code on your local machine: `git clone https://github.com/ibm-cds-labs/spark.samples.git`  
 2. Go to the sub-directory that contains the code for this application: `cd streaming-twitter`.
 3. Compile and assemble the jar using the following command: `sbt assembly`. This creates an _uber jar_ (jar that contains the code and all its dependencies).  
-**Note:** We'll soon update this tutorial with a link to more info about how to assemble uber jars
+_**Note:** We'll soon update this tutorial with a link to information on how to assemble uber jars._
   
 4. Post the jar on a publicly available url, by doing one of the following: 
-   + Upload the jar into a github repository. Note the download url. You'll use in a few minutes.
+   + Upload the jar into a github repository. (Note its download url. You'll use in a few minutes.)
     + Or, you can use our sample jar, which is pre-built and posted [here on github](https://github.com/ibm-cds-labs/spark.samples/raw/master/dist/streaming-twitter-assembly-1.0.jar).
 4. Create a new app on your Twitter account and configure the OAuth credentials. 
 	5. Go to [https://apps.twitter.com/](https://apps.twitter.com/). Sign in and click the **Create New App** button  
@@ -40,7 +42,7 @@ If you haven't already, read and follow the [tutorial on how to build a custom l
 
 ## Deploy and run the application on Bluemix  
 1. On Bluemix, create a new app using the Apache Spark Starter boilerplate.  (Or use an app that already has Spark Service attached).  
-	To do so, in the top menu click **Catalog** and then choose **Apache Spark Starter**
+	To deploy the starter boilerplate, in the top menu click **Catalog** and then choose **Apache Spark Starter**.
 	![sparkstarter](http://developer.ibm.com/clouddataservices/wp-content/uploads/sites/47/2015/09/spark_starter.png)
 2. Add a Watson Tone Analyzer instance to and bind it to your Spark app:  
 	1. In Bluemix, open your new app and click  **+Add a service or API**.  
@@ -58,13 +60,18 @@ If you haven't already, read and follow the [tutorial on how to build a custom l
       }
 ```  
 
-4. Launch the Spark application. (Visit its URL and click **Launch**.)  
-Note: You will be prompted to enter a password, which you can get from the "app_pw" value of the Spark service credentials found the in VCAP_SERVICES of your application.
+4. On the lower left of the Apache Spark service box, click **Show Credentials** and copy value for `app_pw`. (You'll enter it in the next step.)
 
-5. Create a new scala notebook
+5. Launch the Spark application. 
 
-5. On the first cell, install the application jar created in the previous section: `%AddJar https://github.com/ibm-cds-labs/spark.samples/raw/master/dist/streaming-twitter-assembly-1.0.jar -f`  
-6. In the next cell, we'll configure the credential parameters needed to connect to Twitter and Watson Tone Analyzer service. Enter the following, with your credentials inserted in the proper slots:  
+	Visit its URL and click **Launch**.  Enter the password you copied from the `app_pw` value of the Spark service credentials. Your Jupyter dashboard opens.
+
+5. Create a new Scala notebook.
+
+	On the upper right of the screen, click **New** button and, under **Notebooks**, choose **Scala**.
+
+5. In the first cell, enter the following to install the application jar created in the previous section: `%AddJar https://github.com/ibm-cds-labs/spark.samples/raw/master/dist/streaming-twitter-assembly-1.0.jar -f`  
+6. In the next cell, we'll configure the credential parameters needed to connect to Twitter and Watson Tone Analyzer service. Enter the following, with your credentials inserted in the proper slots (replacing the Xs):  
 
 ```scala  
 	val demo = com.ibm.cds.spark.samples.StreamingTwitter //Shorter handle  
@@ -78,7 +85,7 @@ Note: You will be prompted to enter a password, which you can get from the "app_
 	demo.setConfig("watson.tone.password","XXXX")
 	demo.setConfig("watson.tone.username","XXXX")
 ```  
-7. Enter the following code to start streaming from Twitter and collect the data. 
+7. Run the following code to start streaming from Twitter and collect the data. 
 
 
 ```scala 
@@ -97,13 +104,15 @@ Note: You will be prompted to enter a password, which you can get from the "app_
 			df.printSchema
 			sqlContext.sql("select author, text from tweets").show
 ```  
->By default the Stream will run until you call the stopTwitterStreaming api. You can also use an optional parameter to specify a duration that will automatically stop the stream after the specified time. In the code above, we run the stream for 30 seconds: `demo.startTwitterStreaming(sc, Seconds(30))` 
+>By default the stream runs until you call the stopTwitterStreaming api. You can also use an optional parameter to specify a duration that automatically stops the stream after a specified period. In the code above, we run the stream for 30 seconds: `demo.startTwitterStreaming(sc, Seconds(30))` 
 
 8. Once the stream is stopped, you can create a DataFrame using Spark SQL and start querying the data:
 
 ```scala 
 	val (sqlContext, df) = demo.createTwitterDataFrames(sc)
-	
+```  
+
+```	
 	Output:
 		A new table named tweets with 1247 records has been correctly created and can be accessed through the SQLContext variable
 		Here's the schema for tweets
@@ -157,13 +166,13 @@ Note: You will be prompted to enter a password, which you can get from the "app_
 			 dolores luchavez Sun Sep 27 20:18:... en   Love love love  #... 0.0 0.0  100.0        0.0      0.0   0.0        0.0       0.0       0.0               100.0             68.0      
 ```  
 
-9. Save the dataset into a parquet file on Object Storage, this will be used in the next section where we analyze the data using an IPython Notebook
+9. Run the following code to save the dataset into a parquet file on Object Storage. (You'll use this in the next section when you analyze the data with an IPython Notebook.)
 
 ```scala  
 	fullSet.saveAsParquetFile("swift://twitter.spark/tweetsFull.parquet")
 ```  
 
-10. In this other query example, we filter the data to show only the tweets that have an Anger greater than 70%
+10. Run this other query example, which filters the data to show only tweets that have an Anger rating greater than 70%
 
 ```scala 
 	val angerSet = sqlContext.sql("select author, text, Anger from tweets where Anger > 70")
@@ -196,10 +205,10 @@ Note: You will be prompted to enter a password, which you can get from the "app_
 		la malinche        @luvhairyguys1 sc... 100.0
 		? MIGO ?           RT @Lowkey: peopl... 100.0
 ```  
-Note: you can find a copy of this Notebook [here](https://github.com/ibm-cds-labs/spark.samples/blob/master/streaming-twitter/notebook/Twitter%20%2B%20Watson%20Tone%20Analyzer%20Part%201.ipynb)  
+See more: [View a copy of this Scala Notebook on GitHub](https://github.com/ibm-cds-labs/spark.samples/blob/master/streaming-twitter/notebook/Twitter%20%2B%20Watson%20Tone%20Analyzer%20Part%201.ipynb).  
 
-## Analyze the data using an iPython Notebook  
-In the previous section, from a Scala Notebook, we showed how to run the Twitter Stream to acquire data and enrich it with sentiment scores from Watson Tone Analyzer. We also ran a command to persist the data in a parquet file (which is a column oriented binary file format) on the Object Storage bound to this Spark instance. We are now going to reload this data in the IPython Notebook for further analysis and Visualization. 
+## Analyze the data using an IPython Notebook  
+In the previous section, using a Scala Notebook, you learned how to run the Twitter Stream to acquire data and enrich it with sentiment scores from Watson Tone Analyzer. You also ran a command to persist the data in a parquet file on the Object Storage bound to this Spark instance. Now, we'll reload this data in an IPython Notebook for further analysis and visualization. 
   
 1. From the Notebook main page, create a new Python Notebook  
 2. In a cell, run the following code to load the data and create a DataFrame with the entire dataset:
@@ -219,7 +228,7 @@ In the previous section, from a Scala Notebook, we showed how to run the Twitter
 	tweets = sqlContext.sql("SELECT * FROM tweets")
 	tweets.cache()
 ``` 
-3. We are now ready to start building analytics on this data. The first one will be to compute the distribution of tweets by sentiment scores greater than 60%  
+3. Now start analyzing this data. First, compute the distribution of tweets by sentiment scores greater than 60%  
 
 ```  
 	#create an array that will hold the count for each sentiment
@@ -229,7 +238,7 @@ In the previous section, from a Scala Notebook, we showed how to run the Twitter
 	for i, sentiment in enumerate(tweets.columns[-9:]):
     	sentimentDistribution[i]=sqlContext.sql("SELECT count(*) as sentCount FROM tweets where " + sentiment + " > 60").collect()[0].sentCount
 ``` 
-4. With the data stored in sentimentDistribution array, run the following code that plot the data as a bar chart
+4. With the data stored in sentimentDistribution array, run the following code that plots the data as a bar chart
 
 ```python    
 	%matplotlib inline
@@ -255,7 +264,7 @@ In the previous section, from a Scala Notebook, we showed how to run the Twitter
 Results:
 ![Distribution of tweets by sentiment scores greater than 60%](http://developer.ibm.com/clouddataservices/wp-content/uploads/sites/47/2015/09/Spark-Streaming-Twitter-Tone-distribution-bar-chart-1024x556.png)
 
-5. For the next analytic, we compute the top 10 hashtags contained in the tweets. This analytic uses RDD transformations (flatMap, filter, etc...) to massage the data that will be used by the visualization code. You can find more information on the RDD Apis [here](http://spark.apache.org/docs/latest/programming-guide.html#transformations)
+5. Enter the following code to compute the top 10 hashtags contained in the tweets. This code uses RDD transformations (flatMap, filter, etc...) to massage the data that will be used by the visualization code. [Read more about the RDD APIs](http://spark.apache.org/docs/latest/programming-guide.html#transformations).
 
 ```  
 	from operator import add
@@ -266,7 +275,7 @@ Results:
 	top10tags = tagsRDD.take(10)
 ```  
 
-6. This visualization code will plot the data as a pie chart:
+6. Enter this visualization code to plot the data as a pie chart:
 
 ```  
 	%matplotlib inline
@@ -290,7 +299,7 @@ Results:
 Results:
 ![top 10 hashtags pie chart](http://developer.ibm.com/clouddataservices/wp-content/uploads/sites/47/2015/09/Spark-Streaming-Twitter-top-10-hashtag-1024x756.png)
 
-7. The next visualization demonstrate how to build a more complex analytic, which decompose the top 5 hashtags by sentiment scores. The code below computes the mean of all the sentiment scores and visualize them in a multi-series bar chart
+7. Now build a more complex report, which decomposes the top 5 hashtags by sentiment scores. Run the following code to compute the mean of all the sentiment scores and visualizes them in a multi-series bar chart
 
 ```  
 	cols = tweets.columns[-9:]
@@ -351,7 +360,7 @@ Results:
 	#Take the mean tone scores for the top 10 tags
 	top10tagsMeanScores = tagsRDD.take(10)
 ```  
-8. The visualization code plot the data in a multi-series bar chart. It also provide a custom legend to present the data more clearly
+8. The visualization code plots the data in a multi-series bar chart. It also provides a custom legend to present the data more clearly:
 
 ```  
 	%matplotlib inline
@@ -386,15 +395,16 @@ Results:
 Results:
 ![breakdown by tone scores](http://developer.ibm.com/clouddataservices/wp-content/uploads/sites/47/2015/09/Spark-Streaming-Twitter-breakdown-by-tone-scores-1024x511.png)
 
-You can find a copy of this notebook [here](https://github.com/ibm-cds-labs/spark.samples/blob/master/streaming-twitter/notebook/Twitter%20%2B%20Watson%20Tone%20Analyzer%20Part%202.ipynb)
+See more: [View a copy of this IPython Notebook on GitHub](https://github.com/ibm-cds-labs/spark.samples/blob/master/streaming-twitter/notebook/Twitter%20%2B%20Watson%20Tone%20Analyzer%20Part%202.ipynb)
 ## Conclusion
-In this tutorial, you've learned the following tasks:  
-1. how to build and deploy a complex Spark application that integrates multiple services from Bluemix.  
-2. How to load the data into SparkSQL dataframes and query the data using SQL  
-3. How to create complex analytics using RDD transformations and actions   
-4. How to create compelling visualizations using the powerful matplotlib Python package provided in the IPython Notebook.  
+In this tutorial, you learned how to:  
 
-The analytics in this tutorial are meant to show you examples of how powerful the Spark engine and programming model are, and hopefully to encourage you to create your own analytics.  
++ build and deploy a complex Spark application that integrates multiple services from Bluemix.  
++ load the data into SparkSQL dataframes and query the data using SQL.  
++ run complex analytics using RDD transformations and actions.   
++ create compelling visualizations using the powerful matplotlib Python package provided in the IPython Notebook.  
+
+This tutorial shows the power and potential of the Spark engine and programming model. Hopefully these examples have inspired you to run your own analytics and reports with these fast and flexible tools.  
 Happy Sparking!
 
 
