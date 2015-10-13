@@ -97,7 +97,7 @@ The libraryDependencies line tells sbt to download the specified spark component
 6. Compile your source code by entering the following command: `sbt compile`
 7. Package your compiled code as a jar by entering the following command: `sbt package`. 
 
-You should see a file name hellospark_2.10-1.0.jar in the root directory of your project.  
+You should see a file name hellospark_2.10-1.0.jar in the root directory of your project's `dist` directory.  
 You'll see that the naming convention for the jar file is: \[projectName\]\_\[scala_version\]\_\[projectVersion\]  
 
  
