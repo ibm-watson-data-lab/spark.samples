@@ -93,7 +93,7 @@ The following steps guide you through creation of a new Spark project. Or, you c
    ```  
 The libraryDependencies line tells sbt to download the specified spark components. In this example, we specify dependencies to spark-core, spark-sql, and spark-repl, but you can add more spark components dependencies. Just follow the same pattern, like: spark-mllib, spark-graphx, and so on. [Read detailed documentation on sbt build definition](http://www.scala-sbt.org/0.12.4/docs/Getting-Started/Hello.html).
  
-5. From the root directory of your project, run the following command: `sbt update`. This command uses Apache Ivey to compute all the dependencies and download them in your local machine at <home>/.ivy2/cache directory.
+5. From the root directory of your project, run the following command: `sbt update`. This command uses Apache Ivy to compute all the dependencies and download them in your local machine at <home>/.ivy2/cache directory.
 6. Compile your source code by entering the following command: `sbt compile`
 7. Package your compiled code as a jar by entering the following command: `sbt package`. 
 
