@@ -11,7 +11,7 @@ This tutorial covers how to build this app from the source code, configure it fo
 
 This sample app uses Spark Streaming to create a feed that captures live tweets from Twitter. You can optionally filter the tweets that contain the hashtag(s) of your choice. The tweet data is enriched in real time with various sentiment scores provided by the Watson Tone Analyzer service (available on Bluemix). This service provides insight into sentiment, or how the author feels. We then use Spark SQL to load the data into a DataFrame for further analysis. You can also save the data into a Cloudant database or a parquet file and use it later to track how you're trending over longer periods.  
 The following diagram provides a high level architecture of the application:
-![Twitter + Watson high level architecture](http://developer.ibm.com/clouddataservices/wp-content/uploads/sites/47/2015/09/Spark-Streaming-Twitter-architecture-1024x578.png)
+![Twitter + Watson high level architecture](https://i2.wp.com/developer.ibm.com/clouddataservices/wp-content/uploads/sites/47/2015/10/Spark-Streaming-Twitter-architecture.png)
 
 
 ##Before you begin
