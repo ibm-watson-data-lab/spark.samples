@@ -4,7 +4,7 @@ This repository contains tutorials and samples that show you how get the most ou
 
 Watch this repo for new content. Meanwhile, try these tutorials:
 
-- [Start developing with Spark](https://developer.ibm.com/clouddataservices/start-developing-with-spark-and-notebooks/)
+- [Start Developing with Spark](https://developer.ibm.com/clouddataservices/start-developing-with-spark-and-notebooks/)
 
 - [Sentiment Analysis of Twitter Hashtags](https://developer.ibm.com/clouddataservices/sentiment-analysis-of-twitter-hashtags/)
 
