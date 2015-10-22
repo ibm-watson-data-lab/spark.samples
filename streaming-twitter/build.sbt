@@ -1,11 +1,11 @@
 name := "streaming-twitter"
 
-version := "1.1"
+version := "1.2"
 
 scalaVersion := "2.10.4"
 
 libraryDependencies ++= {
-  val sparkVersion =  "1.3.1"
+  val sparkVersion =  "1.4.1"
   Seq(
     "org.apache.spark" %%  "spark-core"	  %  sparkVersion % "provided",
     "org.apache.spark" %%  "spark-sql"  %  sparkVersion % "provided",
