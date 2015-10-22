@@ -125,7 +125,6 @@ object StreamingTwitter {
     }
     
     Logger.getLogger("org.apache.spark").setLevel(Level.OFF)
-    Logger.getLogger("org.eclipse.jetty.server").setLevel(Level.OFF)
     
     workingRDD = sc.emptyRDD
     //Broadcast the config to each worker node
