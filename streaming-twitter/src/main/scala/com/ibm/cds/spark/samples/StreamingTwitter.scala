@@ -68,9 +68,15 @@ object StreamingTwitter {
   //Hold configuration key/value pairs
   val config = new DemoConfig
   
+  //Wrapper api for Notebook access
+  def setConfig(key:String, value:String){
+    config.setConfig(key, value)
+  }
+  
   def startTwitterStreaming( sc: SparkContext, stopAfter: Duration = Seconds(0) ){
     if ( ssc != null ){
       println("Twitter Stream already running");
+      println("Please use stopTwitterStreaming() first and try again");
       return;
     }
     

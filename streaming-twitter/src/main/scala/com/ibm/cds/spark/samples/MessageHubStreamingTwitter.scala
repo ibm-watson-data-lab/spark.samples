@@ -6,7 +6,6 @@ import scala.collection.immutable.Seq.canBuildFrom
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.Map
 import scala.reflect.ClassTag
-
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
@@ -21,12 +20,13 @@ import org.apache.spark.streaming.Seconds
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.dstream.DStream.toPairDStreamFunctions
 import org.http4s.client.blaze.PooledHttp1Client
-
 import com.google.common.base.CharMatcher
 import com.ibm.cds.spark.samples.config.MessageHubConfig
 import com.ibm.cds.spark.samples.dstream.KafkaStreaming.KafkaStreamingContextAdapter
-
 import twitter4j.Status
+import org.apache.spark.streaming.scheduler.StreamingListener
+import org.apache.spark.streaming.scheduler.StreamingListenerBatchStarted
+import org.apache.spark.streaming.scheduler.StreamingListenerBatchCompleted
 
 /**
  * @author dtaieb
@@ -84,7 +84,17 @@ object MessageHubStreamingTwitter {
 //          ssc.checkpoint(checkpointPathDir);
 //          ssc
 //        }
-//    );   
+//    );
+    
+    ssc.addStreamingListener( new StreamingListener{
+      override def onBatchStarted(batchStarted: StreamingListenerBatchStarted){
+        println("Batch started with " + batchStarted.batchInfo.numRecords + " records")
+      }
+      
+      override def onBatchCompleted(batchCompleted: StreamingListenerBatchCompleted){
+        println("Batch completed with " + batchCompleted.batchInfo.numRecords + " records");
+      }
+    })
     
     new Thread( new Runnable() {
       def run(){
