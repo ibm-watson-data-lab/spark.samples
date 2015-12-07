@@ -161,13 +161,13 @@ object MessageHubStreamingTwitter {
     //Broadcast the config to each worker node
     val broadcastVar = sc.broadcast( kafkaProps.toImmutableMap )
     ssc = new StreamingContext( sc, Seconds(5) )
-      ssc.checkpoint(kafkaProps.getConfig( MessageHubConfig.CHECKPOINT_DIR_KEY ));
-      val stream = ssc.createKafkaStream[String, Status,StringDeserializer, StatusDeserializer](
-          kafkaProps,
-          List("demo.tweets.watson.topic")
-      );
-      runAnalytics(sc, broadcastVar, stream)
-      ssc;
+    ssc.checkpoint(kafkaProps.getConfig( MessageHubConfig.CHECKPOINT_DIR_KEY ));
+    val stream = ssc.createKafkaStream[String, Status,StringDeserializer, StatusDeserializer](
+        kafkaProps,
+        List("demo.tweets.watson.topic")
+    );
+    runAnalytics(sc, broadcastVar, stream)
+    ssc;
   }
   
   def runAnalytics(sc:SparkContext, broadcastVar: Broadcast[scala.collection.immutable.Map[String,String]], stream:DStream[(String,Status)]){
