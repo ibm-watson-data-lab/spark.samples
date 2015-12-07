@@ -10,7 +10,6 @@ import scala.collection.JavaConversions._
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.common.config.SSLConfigs
 import org.apache.kafka.common.serialization.Deserializer
 import org.apache.kafka.common.serialization.Serializer
 import org.apache.kafka.common.serialization.StringDeserializer
@@ -44,7 +43,7 @@ object KafkaProducerTest {
     twitterStream.addListener( new StatusListener(){
       var lastSent:Long = 0;
       def onStatus(status: Status){
-        if ( lastSent == 0 || System.currentTimeMillis() - lastSent > 500L){
+        if ( lastSent == 0 || System.currentTimeMillis() - lastSent > 200L){
           lastSent = System.currentTimeMillis()
           println("Got a status  " + status.getText )
           val producerRecord = new ProducerRecord("demo.tweets.watson.topic", "tweet", status )

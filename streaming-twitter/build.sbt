@@ -1,6 +1,6 @@
 name := "streaming-twitter"
 
-version := "1.3"
+version := "1.4"
 
 scalaVersion := "2.10.4"
 
@@ -12,7 +12,10 @@ libraryDependencies ++= {
     "org.apache.spark" %%  "spark-streaming"	  %  sparkVersion % "provided",
     "org.apache.spark" %%  "spark-streaming-twitter"  %  sparkVersion,
     "org.apache.spark" %% "spark-repl" % sparkVersion % "provided",
-    "com.ibm" %% "couchdb-scala" % "0.5.3"
+    "com.ibm" %% "couchdb-scala" % "0.5.3",
+    "org.apache.kafka" % "kafka-log4j-appender" % "0.9.0.0",
+    "org.apache.kafka" % "kafka-clients" % "0.9.0.0",
+    "org.apache.kafka" %% "kafka" % "0.9.0.0"
   )
 }
 

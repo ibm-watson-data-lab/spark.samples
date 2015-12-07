@@ -35,13 +35,13 @@ class KafkaInputDStream[
 }
 
 object KafkaStreaming{
-  //Logger.getLogger("org.apache.kafka").setLevel(Level.ALL)
-  //Logger.getLogger("kafka").setLevel(Level.ALL)
   implicit class KafkaStreamingContextAdapter( val ssc : StreamingContext ){
     def createKafkaStream[K: ClassTag, V: ClassTag, U <: Deserializer[_]: ClassTag, T <: Deserializer[_]: ClassTag](
-      topics: List[String]
+        bootStrapKafkaConfig: MessageHubConfig,
+        topics: List[String]
     ): ReceiverInputDStream[(K, V)] = {
       val kafkaProps = new MessageHubConfig;
+      bootStrapKafkaConfig.copyKafkaOptionKeys( kafkaProps)
       kafkaProps.setValueDeserializer[StatusDeserializer];
       new KafkaInputDStream[K, V, U, T](ssc, kafkaProps.toImmutableMap, topics)
     }
@@ -63,7 +63,7 @@ class KafkaReceiver[
 
   def onStop() {
     if (kafkaConsumer != null) {
-      this.synchronized {
+      kafkaConsumer.synchronized {
         print("Stopping kafkaConsumer")
         kafkaConsumer.close()
         kafkaConsumer = null
@@ -86,14 +86,15 @@ class KafkaReceiver[
 			    while( kafkaConsumer != null ){
             Thread.sleep( 1000L )
             var it:Iterator[ConsumerRecord[K, V]] = null;
-            this.synchronized{
-              if ( kafkaConsumer != null ){
-                it = kafkaConsumer.poll(1000L).iterator
+            if ( kafkaConsumer != null ){
+              kafkaConsumer.synchronized{              
+                it = kafkaConsumer.poll(1000L).iterator              
+                while( it != null && it.hasNext() ){
+                  val record = it.next();
+                  store( (record.key, record.value) )
+                }            
+                kafkaConsumer.commitSync
               }
-            }
-            while( it != null && it.hasNext() ){
-              val record = it.next();
-              store( (record.key, record.value) )
             }
           }  
           println("Exiting Thread")

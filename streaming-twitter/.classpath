@@ -35,6 +35,18 @@
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.spire-math/jawn-parser_2.10/jars/jawn-parser_2.10-0.7.0.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/com.github.julien-truffaut/monocle-core_2.10/jars/monocle-core_2.10-1.0.1.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/com.github.julien-truffaut/monocle-macro_2.10/jars/monocle-macro_2.10-1.0.1.jar"/>
+	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.apache.kafka/kafka-log4j-appender/jars/kafka-log4j-appender-0.9.0.0.jar"/>
+	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/log4j/log4j/bundles/log4j-1.2.17.jar"/>
+	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.apache.kafka/kafka-clients/jars/kafka-clients-0.9.0.0.jar"/>
+	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.xerial.snappy/snappy-java/bundles/snappy-java-1.1.1.7.jar"/>
+	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/net.jpountz.lz4/lz4/jars/lz4-1.2.0.jar"/>
+	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.apache.kafka/kafka_2.10/jars/kafka_2.10-0.9.0.0.jar"/>
+	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/com.101tec/zkclient/jars/zkclient-0.7.jar"/>
+	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.apache.zookeeper/zookeeper/jars/zookeeper-3.4.6.jar"/>
+	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/jline/jline/jars/jline-0.9.94.jar"/>
+	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/junit/junit/jars/junit-3.8.1.jar"/>
+	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/com.yammer.metrics/metrics-core/jars/metrics-core-2.2.0.jar"/>
+	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/net.sf.jopt-simple/jopt-simple/jars/jopt-simple-3.2.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.apache.spark/spark-core_2.10/jars/spark-core_2.10-1.4.1.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/com.twitter/chill_2.10/jars/chill_2.10-0.5.0.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/com.twitter/chill-java/jars/chill-java-0.5.0.jar"/>
@@ -51,7 +63,6 @@
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/xmlenc/xmlenc/jars/xmlenc-0.52.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/commons-httpclient/commons-httpclient/jars/commons-httpclient-3.1.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/commons-logging/commons-logging/jars/commons-logging-1.1.1.jar"/>
-	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/log4j/log4j/bundles/log4j-1.2.17.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/commons-lang/commons-lang/jars/commons-lang-2.5.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/commons-configuration/commons-configuration/jars/commons-configuration-1.6.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/commons-collections/commons-collections/jars/commons-collections-3.2.1.jar"/>
@@ -96,8 +107,6 @@
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.apache.curator/curator-recipes/bundles/curator-recipes-2.4.0.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.apache.curator/curator-framework/bundles/curator-framework-2.4.0.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.apache.curator/curator-client/bundles/curator-client-2.4.0.jar"/>
-	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.apache.zookeeper/zookeeper/jars/zookeeper-3.4.5.jar"/>
-	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/jline/jline/jars/jline-0.9.94.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/com.google.guava/guava/bundles/guava-14.0.1.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.eclipse.jetty.orbit/javax.servlet/orbits/javax.servlet-3.0.0.v201112011016.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.apache.commons/commons-lang3/jars/commons-lang3-3.3.2.jar"/>
@@ -107,8 +116,6 @@
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.slf4j/jcl-over-slf4j/jars/jcl-over-slf4j-1.7.10.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.slf4j/slf4j-log4j12/jars/slf4j-log4j12-1.7.10.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/com.ning/compress-lzf/bundles/compress-lzf-1.0.3.jar"/>
-	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.xerial.snappy/snappy-java/bundles/snappy-java-1.1.1.7.jar"/>
-	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/net.jpountz.lz4/lz4/jars/lz4-1.2.0.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.roaringbitmap/RoaringBitmap/bundles/RoaringBitmap-0.4.5.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/commons-net/commons-net/jars/commons-net-2.2.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.spark-project.akka/akka-remote_2.10/jars/akka-remote_2.10-2.3.4-spark.jar"/>
@@ -181,8 +188,5 @@
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/com.sun.xml.fastinfoset/FastInfoset/jars/FastInfoset-1.2.12.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/javax.xml.bind/jsr173_api/jars/jsr173_api-1.0.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/kafka-clients"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/kafka-core"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/kafka-log4j-appender"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

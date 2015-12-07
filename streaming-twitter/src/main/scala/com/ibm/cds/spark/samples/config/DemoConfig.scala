@@ -1,10 +1,10 @@
 package com.ibm.cds.spark.samples.config
 
 import org.apache.kafka.clients.CommonClientConfigs
-import org.apache.kafka.common.config.SSLConfigs
 import java.io.FileInputStream
 import java.io.InputStream
 import scala.collection.JavaConversions._
+import org.apache.spark.SparkContext
 
 
 /**
@@ -30,6 +30,24 @@ class DemoConfig extends Serializable{
       registerConfigKey("watson.tone.password" ),
       registerConfigKey("cloudant.save", "false" )
   )
+  
+  private def getKeyOrFail(key:String):String={
+    config.get(key).getOrElse( {
+      throw new IllegalStateException("Missing key: " + key)
+    })
+  }
+  def set_hadoop_config(sc:SparkContext){
+    val prefix = "fs.swift.service." + getKeyOrFail("name") 
+    val hconf = sc.hadoopConfiguration
+    hconf.set(prefix + ".auth.url", getKeyOrFail("auth_url")+"/v2.0/tokens")
+    hconf.set(prefix + ".auth.endpoint.prefix", "endpoints")
+    hconf.set(prefix + ".tenant", getKeyOrFail("project_id"))
+    hconf.set(prefix + ".username", getKeyOrFail("user_id"))
+    hconf.set(prefix + ".password", getKeyOrFail("password"))
+    hconf.setInt(prefix + ".http.port", 8080)
+    hconf.set(prefix + ".region", getKeyOrFail("region"))
+    hconf.setBoolean(prefix + ".public", true)
+  }
   
   def initConfigKeys(){
     //Overridable by subclasses
@@ -60,7 +78,7 @@ class DemoConfig extends Serializable{
     }
   }
   
-  def registerConfigKey( key: String, default: String = null ) : (String,String) = {
+  private[config] def registerConfigKey( key: String, default: String = null ) : (String,String) = {
     if ( default == null ){
       (key, Option(System.getProperty(key)).orNull )
     }

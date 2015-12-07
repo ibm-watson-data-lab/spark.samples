@@ -14,7 +14,6 @@ import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.SQLContext
 import org.apache.spark.streaming.Duration
 import org.apache.spark.streaming.Seconds
 import org.apache.spark.streaming.StreamingContext
@@ -27,6 +26,14 @@ import twitter4j.Status
 import org.apache.spark.streaming.scheduler.StreamingListener
 import org.apache.spark.streaming.scheduler.StreamingListenerBatchStarted
 import org.apache.spark.streaming.scheduler.StreamingListenerBatchCompleted
+import com.ibm.cds.spark.samples.config.DemoConfig
+import org.apache.log4j.Level
+import org.apache.log4j.Logger
+import org.apache.spark.streaming.dstream.DStream
+import org.apache.spark.streaming.scheduler.StreamingListenerReceiverStopped
+import org.apache.spark.streaming.scheduler.StreamingListenerReceiverError
+import org.apache.spark.streaming.scheduler.StreamingListenerReceiverStarted
+import org.apache.spark.broadcast.Broadcast
 
 /**
  * @author dtaieb
@@ -35,20 +42,26 @@ import org.apache.spark.streaming.scheduler.StreamingListenerBatchCompleted
 object MessageHubStreamingTwitter {
   
   var ssc: StreamingContext = null
-  var sqlContext: SQLContext = null
-  var workingRDD: RDD[Row] = null
+  val reuseCheckpoint = false;
   
-  val checkpointPathDir = "/Users/dtaieb/watsondev/temp/ssckafka";
-  
-  var toneScoresRDD:RDD[(String, (List[String], List[Double]))] = null;
+  val queue = new scala.collection.mutable.Queue[(String, String)] 
   
   //Logger.getLogger("org.apache.kafka").setLevel(Level.ALL)
   //Logger.getLogger("kafka").setLevel(Level.ALL)
+  Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
 
   def main(args: Array[String]): Unit = {
     val conf = new SparkConf().setAppName("Spark Streaming Twitter + Watson with MessageHub/Kafka Demo")
     val sc = new SparkContext(conf)
     startTwitterStreaming(sc);
+  }
+  
+  //Hold configuration key/value pairs
+  lazy val kafkaProps = new MessageHubConfig
+  
+  //Wrapper api for Notebook access
+  def getConfig():DemoConfig={
+    kafkaProps
   }
   
   case class EnrichedTweet( author:String, date: String, lang: String, text: String, lat: Double, long: Double, sentimentScores: Map[String, Double])
@@ -59,34 +72,40 @@ object MessageHubStreamingTwitter {
       return;
     }
     
-    workingRDD = sc.emptyRDD
-    
-    val kafkaProps = new MessageHubConfig;
     kafkaProps.setValueSerializer[StringSerializer];
     
     if ( !kafkaProps.validateConfiguration() ){
       return;
     }
     
-    //Broadcast the config to each worker node
-    val broadcastVar = sc.broadcast( kafkaProps.toImmutableMap )
+    val kafkaProducer = new org.apache.kafka.clients.producer.KafkaProducer[String, String]( kafkaProps.toImmutableMap ); 
     
-    val kafkaProducer = new org.apache.kafka.clients.producer.KafkaProducer[String, String]( kafkaProps.toImmutableMap );
-    val queue = new scala.collection.mutable.Queue[(String, String)]  
-    toneScoresRDD = sc.emptyRDD
-    
-    ssc = new StreamingContext( sc, Seconds(10) )
-    ssc.checkpoint(checkpointPathDir);
-//    ssc = StreamingContext.getOrCreate( 
-//        checkpointPathDir, 
-//        () => {
-//          val ssc = new StreamingContext( sc, Seconds(10) )
-//          ssc.checkpoint(checkpointPathDir);
-//          ssc
-//        }
-//    );
+    if ( !reuseCheckpoint ){
+      createStreamingContextAndRunAnalytics(sc);
+    }else{
+      ssc = StreamingContext.getOrCreate( 
+          kafkaProps.getConfig( MessageHubConfig.CHECKPOINT_DIR_KEY ), 
+          () => {
+            createStreamingContextAndRunAnalytics(sc);
+          },
+          sc.hadoopConfiguration,
+          true
+      );
+    }
     
     ssc.addStreamingListener( new StreamingListener{
+      override def onReceiverStarted(receiverStarted: StreamingListenerReceiverStarted) { 
+        println("Receiver Started: " + receiverStarted.receiverInfo.name )
+      }
+
+      override def onReceiverError(receiverError: StreamingListenerReceiverError) { 
+        println("Receiver Error: " + receiverError.receiverInfo.lastError)
+      }
+
+      override def onReceiverStopped(receiverStopped: StreamingListenerReceiverStopped) { 
+        println("Receiver Stopped: " + receiverStopped.receiverInfo.name)
+      }
+      
       override def onBatchStarted(batchStarted: StreamingListenerBatchStarted){
         println("Batch started with " + batchStarted.batchInfo.numRecords + " records")
       }
@@ -99,27 +118,59 @@ object MessageHubStreamingTwitter {
     new Thread( new Runnable() {
       def run(){
         while(ssc!=null){          
-          queue.synchronized{
-            while(!queue.isEmpty ){
-              try{
-                val task = queue.dequeue();
-                val producerRecord = new ProducerRecord[String,String](task._1, "tweet", task._2 )
-                val metadata = kafkaProducer.send( producerRecord ).get;
-                println("Sent record " + metadata.offset() + " Topic " + task._1)
-              }catch{
+          while(!queue.isEmpty ){
+            try{
+                var task:(String,String) = null;
+                queue.synchronized{
+                  task = queue.dequeue();
+                }
+                if ( task != null ){
+                  val producerRecord = new ProducerRecord[String,String](task._1, "tweet", task._2 )
+                  val metadata = kafkaProducer.send( producerRecord ).get;
+                  println("Sent record " + metadata.offset() + " Topic " + task._1)
+                }
+            }catch{
                 case e:Throwable => e.printStackTrace()
-              }
             }
+          }
+          queue.synchronized{
             queue.wait();
           }
         }
       }
     },"Message Hub producer").start
+   
+    ssc.start
     
-    val stream = ssc.createKafkaStream[String, Status,StringDeserializer, StatusDeserializer](
-      List("demo.tweets.watson.topic")
-    );
-
+    println("Twitter stream started");
+    println("Tweets are collected real-time and analyzed")
+    println("To stop the streaming and start interacting with the data use: StreamingTwitter.stopTwitterStreaming")
+    
+    if ( !stopAfter.isZero ){
+      //Automatically stop it after 10s
+      new Thread( new Runnable {
+        def run(){
+          Thread.sleep( stopAfter.milliseconds )
+          stopTwitterStreaming
+        }
+      }).start
+    }
+  }
+  
+  def createStreamingContextAndRunAnalytics(sc:SparkContext):StreamingContext={
+    //Broadcast the config to each worker node
+    val broadcastVar = sc.broadcast( kafkaProps.toImmutableMap )
+    ssc = new StreamingContext( sc, Seconds(5) )
+      ssc.checkpoint(kafkaProps.getConfig( MessageHubConfig.CHECKPOINT_DIR_KEY ));
+      val stream = ssc.createKafkaStream[String, Status,StringDeserializer, StatusDeserializer](
+          kafkaProps,
+          List("demo.tweets.watson.topic")
+      );
+      runAnalytics(sc, broadcastVar, stream)
+      ssc;
+  }
+  
+  def runAnalytics(sc:SparkContext, broadcastVar: Broadcast[scala.collection.immutable.Map[String,String]], stream:DStream[(String,Status)]){
     val keys = broadcastVar.value.get("tweets.key").get.split(",");
     val tweets = stream.map( t => t._2)
       .filter { status => 
@@ -129,7 +180,7 @@ object MessageHubStreamingTwitter {
       }
     
     val rowTweets = tweets.map(status=> {
-    	lazy val client = PooledHttp1Client()
+      lazy val client = PooledHttp1Client()
       val sentiment = ToneAnalyzer.computeSentiment( client, status, broadcastVar )        
       var scoreMap : Map[String, Double] = Map()
       if ( sentiment != null ){
@@ -151,19 +202,21 @@ object MessageHubStreamingTwitter {
       )
     })
    
+   val delimTagTone = "-%!"
+   val delimToneScore = ":%@"
    val metricsStream = rowTweets.flatMap { eTweet => {
      val retList = ListBuffer[String]()
      for ( tag <- eTweet.text.split("\\s+") ){
        if ( tag.startsWith( "#") && tag.length > 1 ){
            for ( tone <- Option( eTweet.sentimentScores.keys ).getOrElse( Seq() ) ){
-               retList += (tag + "-" + tone + ":" + eTweet.sentimentScores.getOrElse( tone, 0.0))
+               retList += (tag + delimTagTone + tone + delimToneScore + eTweet.sentimentScores.getOrElse( tone, 0.0))
            }
        }
      }
      retList.toList
    }}
    .map { fullTag => {
-       val split = fullTag.split(":");
+       val split = fullTag.split(delimToneScore);
        (split(0), split(1).toFloat) 
    }}
    .combineByKey( 
@@ -175,7 +228,7 @@ object MessageHubStreamingTwitter {
    .map[(String,(Long/*count*/, List[(String, Double)]))]{ t => {
      val key = t._1;
      val ab = t._2;
-     val split = key.split("-")
+     val split = key.split(delimTagTone)
      (split(0), (ab._2, List((split(1), BigDecimal(ab._1/ab._2).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble ))))
    }}
    .reduceByKey( (t,u) => (t._1+u._1, (t._2 ::: u._2).sortWith( (l,r) => l._1.compareTo( r._1 ) < 0 )))
@@ -202,33 +255,17 @@ object MessageHubStreamingTwitter {
    metricsStream.foreachRDD( rdd =>{
      val topHashTags = rdd.sortBy( f => f._2._1, false ).take(5)
      if ( !topHashTags.isEmpty){
-    	 queue.synchronized{
+       queue.synchronized{
          queue += (("topHashTags", TweetsMetricJsonSerializer.serialize(topHashTags.map( f => (f._1, f._2._1 )))))
-    		 queue += (("topHashTags.toneScores", ToneScoreJsonSerializer.serialize(topHashTags)))
-  				 try{
-  					 queue.notify
-  				 }catch{
-  				   case e:Throwable=>e.printStackTrace();
-  				 }
-    	 }
+         queue += (("topHashTags.toneScores", ToneScoreJsonSerializer.serialize(topHashTags)))
+           try{
+             queue.notify
+           }catch{
+             case e:Throwable=>e.printStackTrace();
+           }
+       }
      }
    })
-   
-    ssc.start
-    
-    println("Twitter stream started");
-    println("Tweets are collected real-time and analyzed")
-    println("To stop the streaming and start interacting with the data use: StreamingTwitter.stopTwitterStreaming")
-    
-    if ( !stopAfter.isZero ){
-      //Automatically stop it after 10s
-      new Thread( new Runnable {
-        def run(){
-          Thread.sleep( stopAfter.milliseconds )
-          stopTwitterStreaming
-        }
-      }).start
-    }
   }
   
   def stopTwitterStreaming(){
@@ -241,11 +278,6 @@ object MessageHubStreamingTwitter {
     ssc.stop(stopSparkContext = false, stopGracefully = true)
     ssc = null
     println("Twitter stream stopped");
-    
-    println( "You can now create a sqlContext and DataFrame with " + workingRDD.count + " Tweets created. Sample usage: ")
-    println("val (sqlContext, df) = com.ibm.cds.spark.samples.StreamingTwitter.createTwitterDataFrames(sc)")
-    println("df.printSchema")
-    println("sqlContext.sql(\"select author, text from tweets\").show")
   }
 }
 
