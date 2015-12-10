@@ -77,6 +77,7 @@ class KafkaReceiver[
     val keyDeserializer = classTag[U].runtimeClass.getConstructor().newInstance().asInstanceOf[Deserializer[K]]
     val valueDeserializer = classTag[T].runtimeClass.getConstructor().newInstance().asInstanceOf[Deserializer[V]]
     
+    //Create a new kafka consumer and subscribe to the relevant topics
     kafkaConsumer = new KafkaConsumer[K, V](kafkaParams)
     kafkaConsumer.subscribe( topics )
     
@@ -84,22 +85,29 @@ class KafkaReceiver[
       def run(){
         try{
 			    while( kafkaConsumer != null ){
-            Thread.sleep( 1000L )
             var it:Iterator[ConsumerRecord[K, V]] = null;
+            
             if ( kafkaConsumer != null ){
-              kafkaConsumer.synchronized{              
+              kafkaConsumer.synchronized{     
+                //Poll for new events
                 it = kafkaConsumer.poll(1000L).iterator              
                 while( it != null && it.hasNext() ){
+                  //Get the record and store it
                   val record = it.next();
                   store( (record.key, record.value) )
                 }            
                 kafkaConsumer.commitSync
               }
-            }
+            }            
+
+            Thread.sleep( 1000L )
           }  
           println("Exiting Thread")
         }catch{
-          case e:Throwable => e.printStackTrace()
+          case e:Throwable => {
+            reportError( "Error in KafkaConsumer thread", e);
+            e.printStackTrace()
+          }
         }
 	    }
     }).start
