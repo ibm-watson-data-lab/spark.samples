@@ -34,12 +34,13 @@ import org.apache.spark.streaming.scheduler.StreamingListenerReceiverStopped
 import org.apache.spark.streaming.scheduler.StreamingListenerReceiverError
 import org.apache.spark.streaming.scheduler.StreamingListenerReceiverStarted
 import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.Logging
 
 /**
  * @author dtaieb
  * Twitter+Watson sample app with MessageHub/Kafka
  */
-object MessageHubStreamingTwitter {
+object MessageHubStreamingTwitter extends Logging{
   
   var ssc: StreamingContext = null
   val reuseCheckpoint = false;
@@ -48,7 +49,7 @@ object MessageHubStreamingTwitter {
   
   //Logger.getLogger("org.apache.kafka").setLevel(Level.ALL)
   //Logger.getLogger("kafka").setLevel(Level.ALL)
-  Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
+  //Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
 
   def main(args: Array[String]): Unit = {
     val conf = new SparkConf().setAppName("Spark Streaming Twitter + Watson with MessageHub/Kafka Demo")
@@ -130,7 +131,7 @@ object MessageHubStreamingTwitter {
                   println("Sent record " + metadata.offset() + " Topic " + task._1)
                 }
             }catch{
-                case e:Throwable => e.printStackTrace()
+                case e:Throwable => logError(e.getMessage, e)
             }
           }
           queue.synchronized{
@@ -162,21 +163,19 @@ object MessageHubStreamingTwitter {
     val broadcastVar = sc.broadcast( kafkaProps.toImmutableMap )
     ssc = new StreamingContext( sc, Seconds(5) )
     ssc.checkpoint(kafkaProps.getConfig( MessageHubConfig.CHECKPOINT_DIR_KEY ));
-    val stream = ssc.createKafkaStream[String, Status,StringDeserializer, StatusDeserializer](
+    val stream = ssc.createKafkaStream[String, StatusAdapter,StringDeserializer, StatusDeserializer](
         kafkaProps,
-        List("demo.tweets.watson.topic")
+        List(kafkaProps.getConfig(MessageHubConfig.KAFKA_TOPIC_TWEETS ))
     );
     runAnalytics(sc, broadcastVar, stream)
     ssc;
   }
   
-  def runAnalytics(sc:SparkContext, broadcastVar: Broadcast[scala.collection.immutable.Map[String,String]], stream:DStream[(String,Status)]){
+  def runAnalytics(sc:SparkContext, broadcastVar: Broadcast[scala.collection.immutable.Map[String,String]], stream:DStream[(String,StatusAdapter)]){
     val keys = broadcastVar.value.get("tweets.key").get.split(",");
     val tweets = stream.map( t => t._2)
       .filter { status => 
-        Option(status.getUser).flatMap[String] { 
-          u => Option(u.getLang) 
-        }.getOrElse("").startsWith("en") && CharMatcher.ASCII.matchesAllOf(status.getText) && ( keys.isEmpty || keys.exists{status.getText.contains(_)})
+        status.userLang.startsWith("en") && CharMatcher.ASCII.matchesAllOf(status.text) && ( keys.isEmpty || keys.exists{status.text.contains(_)})
       }
     
     val rowTweets = tweets.map(status=> {
@@ -192,12 +191,12 @@ object MessageHubStreamingTwitter {
       }
       
       EnrichedTweet( 
-          status.getUser.getName, 
-          status.getCreatedAt.toString, 
-          status.getUser.getLang, 
-          status.getText, 
-          Option(status.getGeoLocation).map{ _.getLatitude}.getOrElse(0.0),
-          Option(status.getGeoLocation).map{_.getLongitude}.getOrElse(0.0),
+          status.userName, 
+          status.createdAt, 
+          status.userLang, 
+          status.text, 
+          status.long,
+          status.lat,
           scoreMap
       )
     })
@@ -261,7 +260,7 @@ object MessageHubStreamingTwitter {
            try{
              queue.notify
            }catch{
-             case e:Throwable=>e.printStackTrace();
+             case e:Throwable=>logError(e.getMessage, e)
            }
        }
      }

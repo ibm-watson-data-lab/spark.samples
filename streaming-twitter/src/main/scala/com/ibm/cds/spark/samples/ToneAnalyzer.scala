@@ -4,7 +4,6 @@ import org.http4s.EntityEncoder
 import org.http4s.Uri
 import org.apache.commons.lang3.StringEscapeUtils
 import org.http4s.client.Client
-import twitter4j.Status
 import org.http4s.Request
 import org.http4s.BasicCredentials
 import org.http4s.Header
@@ -42,12 +41,12 @@ object ToneAnalyzer {
   
   case class Geo( lat: Double, long: Double )
   case class Tweet(author: String, date: String, language: String, text: String, geo : Geo, sentiment : Sentiment )
-  
-  def computeSentiment( client: Client, status:Status, broadcastVar: Broadcast[Map[String,String]] ) : Sentiment = {
-    logger.trace("Calling sentiment from Watson Tone Analyzer: " + status.getText())
+ 
+  def computeSentiment( client: Client, status:StatusAdapter, broadcastVar: Broadcast[Map[String,String]] ) : Sentiment = {
+    logger.trace("Calling sentiment from Watson Tone Analyzer: " + status.text)
     //Get Sentiment on the tweet
     val sentimentResults: String = 
-      EntityEncoder[String].toEntity("{\"text\": \"" + StringEscapeUtils.escapeJson( status.getText ) + "\"}" ).flatMap { 
+      EntityEncoder[String].toEntity("{\"text\": \"" + StringEscapeUtils.escapeJson( status.text ) + "\"}" ).flatMap { 
         entity =>
           val s = broadcastVar.value.get("watson.tone.url").get + "/v1/tone"
           val toneuri: Uri = Uri.fromString( s ).getOrElse( null )

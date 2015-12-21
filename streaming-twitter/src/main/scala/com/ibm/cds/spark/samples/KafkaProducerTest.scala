@@ -4,39 +4,38 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
-import java.util.Map
-import java.util.Properties
-import scala.collection.JavaConversions._
-import org.apache.kafka.clients.CommonClientConfigs
+import java.util.concurrent.TimeUnit
+import scala.collection.JavaConversions.mapAsJavaMap
+import scala.collection.JavaConversions.seqAsJavaList
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.Deserializer
 import org.apache.kafka.common.serialization.Serializer
 import org.apache.kafka.common.serialization.StringDeserializer
+import org.apache.log4j.Level
+import org.apache.log4j.Logger
+import com.ibm.cds.spark.samples.config.MessageHubConfig
 import twitter4j.StallWarning
 import twitter4j.Status
 import twitter4j.StatusDeletionNotice
 import twitter4j.StatusListener
 import twitter4j.TwitterStreamFactory
-import org.apache.log4j.Level
-import org.apache.log4j.Logger
-import com.ibm.cds.spark.samples.config.MessageHubConfig
+import scala.util.parsing.json.JSON
+import java.io.InputStream
 
 
 /**
  * @author dtaieb
  */
-object KafkaProducerTest {  
+object KafkaProducerTest {
+  //Very verbose, enable only if necessary
+  Logger.getLogger("org.apache.kafka").setLevel(Level.ALL)
+  Logger.getLogger("kafka").setLevel(Level.ALL)
+  
   val kafkaProps = new MessageHubConfig;
   kafkaProps.setValueSerializer[StatusSerializer]
-  def main(args: Array[String]): Unit = {
-    
-    //Very verbose, enable only if necessary
-    //Logger.getLogger("org.apache.kafka").setLevel(Level.ALL)
-    //Logger.getLogger("kafka").setLevel(Level.ALL)
-    
+  def main(args: Array[String]): Unit = {    
     kafkaProps.validateConfiguration("watson.tone.")
-    
     val kafkaProducer = new org.apache.kafka.clients.producer.KafkaProducer[java.lang.String, Status]( kafkaProps.toImmutableMap() );
     
     val twitterStream = new TwitterStreamFactory().getInstance();
@@ -46,9 +45,13 @@ object KafkaProducerTest {
         if ( lastSent == 0 || System.currentTimeMillis() - lastSent > 200L){
           lastSent = System.currentTimeMillis()
           println("Got a status  " + status.getText )
-          val producerRecord = new ProducerRecord("demo.tweets.watson.topic", "tweet", status )
-          val metadata = kafkaProducer.send( producerRecord ).get;
-          println("Successfully sent record: Topic: " + metadata.topic + " Offset: " + metadata.offset )
+          val producerRecord = new ProducerRecord(kafkaProps.getConfig(MessageHubConfig.KAFKA_TOPIC_TWEETS ), "tweet", status )
+          try{
+            val metadata = kafkaProducer.send( producerRecord ).get(2000, TimeUnit.SECONDS);
+            println("Successfully sent record: Topic: " + metadata.topic + " Offset: " + metadata.offset )
+          }catch{
+            case e:Throwable => e.printStackTrace
+          }
         }
       }
       def onDeletionNotice( notice: StatusDeletionNotice){
@@ -76,25 +79,8 @@ object KafkaProducerTest {
   }
 }
 
-class StatusDeserializer extends Deserializer[Status]{
-  def configure( props: Map[String, _], isKey: Boolean) = {
-    
-  }
-  
-  def close(){
-    
-  }
-  
-  def deserialize(topic: String, data: Array[Byte] ): Status = {
-    val bais = new ByteArrayInputStream( data )
-    val ois = new ObjectInputStream( bais )
-    ois.close
-    ois.readObject().asInstanceOf[Status]
-  }
-}
-
 class StatusSerializer extends Serializer[Status]{
-  def configure( props: Map[String, _], isKey: Boolean) = {
+  def configure( props: java.util.Map[String, _], isKey: Boolean) = {
     
   }
   
@@ -112,9 +98,9 @@ class StatusSerializer extends Serializer[Status]{
 }
 object KafkaConsumerTest {
   def main(args: Array[String]): Unit = {
-    val kafkaConsumer = new KafkaConsumer[java.lang.String, Status](KafkaProducerTest.kafkaProps.toImmutableMap, new StringDeserializer(), new StatusDeserializer())
+    val kafkaConsumer = new KafkaConsumer[java.lang.String, StatusAdapter](KafkaProducerTest.kafkaProps.toImmutableMap, new StringDeserializer(), new StatusDeserializer())
     
-    kafkaConsumer.subscribe( List("demo.tweets.watson.topic") )
+    kafkaConsumer.subscribe( List(KafkaProducerTest.kafkaProps.getConfig(MessageHubConfig.KAFKA_TOPIC_TWEETS )) )
     new Thread( new Runnable {
       def run(){
         while( true ){
