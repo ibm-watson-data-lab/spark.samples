@@ -9,6 +9,17 @@ import scala.io.Source
 import java.io.InputStream
 import java.io.FileWriter
 import java.io.File
+import org.http4s.EntityEncoder
+import org.apache.commons.lang3.StringEscapeUtils
+import org.http4s.Uri
+import org.http4s.client.blaze.PooledHttp1Client
+import org.http4s.Request
+import org.http4s.Method
+import org.http4s.Headers
+import org.http4s.headers.Authorization
+import org.http4s.BasicCredentials
+import org.http4s.Header
+import javax.net.ssl.SSLContext
 
 
 /**
@@ -19,7 +30,7 @@ class MessageHubConfig extends DemoConfig{
   override def initConfigKeys(){
     config = config ++ Map[String,String]( 
       registerConfigKey(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG),
-      registerConfigKey(CommonClientConfigs.CLIENT_ID_CONFIG),
+      registerConfigKey(CommonClientConfigs.CLIENT_ID_CONFIG, "demo.watson.twitter.messagehub"),
       registerConfigKey("auto.offset.reset", "latest"),
       registerConfigKey("acks", "-1"),
       registerConfigKey("retries", "0"),
@@ -39,15 +50,16 @@ class MessageHubConfig extends DemoConfig{
       registerConfigKey(MessageHubConfig.CHECKPOINT_DIR_KEY),
       registerConfigKey(MessageHubConfig.KAFKA_TOPIC_TWEETS, "demo.tweets.watson.topic"),
       registerConfigKey(MessageHubConfig.KAFKA_USER_NAME),
-      registerConfigKey(MessageHubConfig.KAFKA_USER_PASSWORD)
-    )
-    
-    //Set the Jaas Config
-    
+      registerConfigKey(MessageHubConfig.KAFKA_USER_PASSWORD),
+      registerConfigKey(MessageHubConfig.MESSAGEHUB_API_KEY),
+      registerConfigKey(MessageHubConfig.MESSAGEHUB_REST_URL)
+    )    
   }
   
   private def getDefaultSSLTrustStoreLocation():String={
-    "/Library/Java/JavaVirtualMachines/jdk1.7.0_51.jdk/Contents/Home/jre/lib/security/cacerts"
+    val javaHome = System.getProperty("java.home") + File.separator + "lib" + File.separator + "security" + File.separator + "cacerts"
+    println("default location of ssl Trust store is: " + javaHome)
+    javaHome
   }
 
   override private[config] def registerConfigKey( key: String, default: String = null ) : (String,String) = {
@@ -65,7 +77,6 @@ class MessageHubConfig extends DemoConfig{
         val confString = Source.fromInputStream( is ).mkString
           .replace( "$USERNAME", getConfig(MessageHubConfig.KAFKA_USER_NAME ))
           .replace( "$PASSWORD", getConfig(MessageHubConfig.KAFKA_USER_PASSWORD) )
-        println(confString)
         
         val confDir= new File( System.getProperty("java.io.tmpdir") + File.separator + 
             fixPath( getConfig(MessageHubConfig.KAFKA_USER_NAME) ) )// + File.separator + "jaas.conf"
@@ -99,11 +110,45 @@ class MessageHubConfig extends DemoConfig{
   def setValueDeserializer[U]()(implicit c: ClassTag[U]){
     setConfig("value.deserializer", c.runtimeClass.getName);
   }
+  
+  def createTopicsIfNecessary( topics: String* ){
+    val sslContext = SSLContext.getInstance("TLSv1.2")
+    sslContext.init(null, null, null)
+    lazy val client = PooledHttp1Client(sslContext=Option(sslContext))
+    for( topic <- topics ){
+      EntityEncoder[String].toEntity("{\"name\": \"" + StringEscapeUtils.escapeJson( topic ) + "\"}" ).flatMap { 
+        entity =>
+          val topicUri: Uri = Uri.fromString( getConfig(MessageHubConfig.MESSAGEHUB_REST_URL) + "/admin/topics" ).getOrElse( null )
+          println(topicUri)
+          client(
+              Request( 
+                  method = Method.POST, 
+                  uri = topicUri,
+                  headers = Headers(
+                      Header("Content-Type", "application/json"),
+                      Header("X-Auth-Token", getConfig(MessageHubConfig.MESSAGEHUB_API_KEY))
+                    ),
+                  body = entity.body
+              )
+          ).flatMap { response =>
+             response.status.code match {
+               case 200 | 202 => println("Successfully created topic: " + topic)
+               case 422 => println("Topic already exists in the server: " + topic)
+               case _ => throw new IllegalStateException("Error when trying to create topic: " + response.status.code + " Reason: " + response.status.reason)
+             }
+             response.as[String]
+          }
+      }.run
+    }
+  }
 }
 
 object MessageHubConfig{
-  val CHECKPOINT_DIR_KEY = "checkpointDir"
-  val KAFKA_TOPIC_TWEETS = "kafka.topic.tweet"    //Key for name of the kafka topic holding used for publishing the tweets
-  val KAFKA_USER_NAME = "kafka.user.name"
-  val KAFKA_USER_PASSWORD = "kafak.user.password"
+  final val CHECKPOINT_DIR_KEY = "checkpointDir"
+  final val KAFKA_TOPIC_TWEETS = "kafka.topic.tweet"    //Key for name of the kafka topic holding used for publishing the tweets
+  final val KAFKA_USER_NAME = "kafka.user.name"
+  final val KAFKA_USER_PASSWORD = "kafak.user.password"
+  
+  final val MESSAGEHUB_API_KEY = "api_key"
+  final val MESSAGEHUB_REST_URL = "kafka_rest_url"
 }

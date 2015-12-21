@@ -28,6 +28,8 @@ assemblyMergeStrategy in assembly := {
     oldStrategy(x)
 }
 
+unmanagedBase <<= baseDirectory { base => base / "lib" }
+
 assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false)
 
 resolvers += "Local couchdb-scala repo" at (baseDirectory.value / "lib/couchdb-scala").toURI.toString

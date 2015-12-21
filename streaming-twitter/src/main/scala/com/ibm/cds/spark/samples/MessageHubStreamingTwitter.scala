@@ -47,9 +47,12 @@ object MessageHubStreamingTwitter extends Logging{
   
   val queue = new scala.collection.mutable.Queue[(String, String)] 
   
+  final val KAFKA_TOPIC_TOP_HASHTAGS = "topHashTags"
+  final val KAFKA_TOPIC_TONE_SCORES = "topHashTags.toneScores"
+  
   //Logger.getLogger("org.apache.kafka").setLevel(Level.ALL)
   //Logger.getLogger("kafka").setLevel(Level.ALL)
-  //Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
+  Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
 
   def main(args: Array[String]): Unit = {
     val conf = new SparkConf().setAppName("Spark Streaming Twitter + Watson with MessageHub/Kafka Demo")
@@ -78,6 +81,9 @@ object MessageHubStreamingTwitter extends Logging{
     if ( !kafkaProps.validateConfiguration() ){
       return;
     }
+    
+    //Make sure the topics are already created
+    kafkaProps.createTopicsIfNecessary( KAFKA_TOPIC_TONE_SCORES, KAFKA_TOPIC_TOP_HASHTAGS )
     
     val kafkaProducer = new org.apache.kafka.clients.producer.KafkaProducer[String, String]( kafkaProps.toImmutableMap ); 
     
