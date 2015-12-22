@@ -256,7 +256,7 @@ object MessageHubStreamingTwitter extends Logging{
      var count = safeB._1
      for( item <- a ){
        count += item._1
-       listScores = listScores.zipAll( item._3, 0.0, 0.0).map{ case(a,b)=>a+b/2 }.toList
+       listScores = listScores.zipAll( item._3, 0.0, 0.0).map{ case(a,b)=>(a+b)/2 }.toList
        listTones = item._2
      }
      
