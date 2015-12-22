@@ -71,32 +71,9 @@ class MessageHubConfig extends DemoConfig{
     val ret = super.validateConfiguration(ignorePrefix)
     if ( ret ){
       //Create the jaas configuration
-      var is:InputStream = null
-      try{
-        is = MessageHubConfig.getClass.getClassLoader.getResourceAsStream("jaas.conf");
-        val confString = Source.fromInputStream( is ).mkString
-          .replace( "$USERNAME", getConfig(MessageHubConfig.KAFKA_USER_NAME ))
-          .replace( "$PASSWORD", getConfig(MessageHubConfig.KAFKA_USER_PASSWORD) )
-        
-        val confDir= new File( System.getProperty("java.io.tmpdir") + File.separator + 
-            fixPath( getConfig(MessageHubConfig.KAFKA_USER_NAME) ) )// + File.separator + "jaas.conf"
-        confDir.mkdirs
-        val confFile = new File( confDir, "jaas.conf");
-        val fw = new FileWriter( confFile );
-        fw.write( confString )
-        fw.close
-        
-        //Set the jaas login config property
-        System.setProperty(JaasUtils.JAVA_LOGIN_CONFIG_PARAM, confFile.getAbsolutePath );
-      }finally{
-        if ( is != null ) is.close
-      }
+      MessageHubConfig.createJaasConfiguration(getConfig(MessageHubConfig.KAFKA_USER_NAME ), getConfig(MessageHubConfig.KAFKA_USER_PASSWORD) )
     }
     ret
-  }
-  
-  private def fixPath(path: String):String = {
-    path.replaceAll("\\ / : * ? \" < > |,", "_")
   }
   
   def copyKafkaOptionKeys(other:MessageHubConfig){
@@ -147,8 +124,42 @@ object MessageHubConfig{
   final val CHECKPOINT_DIR_KEY = "checkpointDir"
   final val KAFKA_TOPIC_TWEETS = "kafka.topic.tweet"    //Key for name of the kafka topic holding used for publishing the tweets
   final val KAFKA_USER_NAME = "kafka.user.name"
-  final val KAFKA_USER_PASSWORD = "kafak.user.password"
+  final val KAFKA_USER_PASSWORD = "kafka.user.password"
   
   final val MESSAGEHUB_API_KEY = "api_key"
   final val MESSAGEHUB_REST_URL = "kafka_rest_url"
+  
+  private def fixPath(path: String):String = {
+    path.replaceAll("\\ / : * ? \" < > |,", "_")
+  }
+  
+  def createJaasConfiguration( userName: String, password: String){
+    //Create the jaas configuration
+      var is:InputStream = null
+      try{
+        is = MessageHubConfig.getClass.getClassLoader.getResourceAsStream("jaas.conf");
+        val confString = Source.fromInputStream( is ).mkString
+          .replace( "$USERNAME", userName)
+          .replace( "$PASSWORD", password )
+        
+        val confDir= new File( System.getProperty("java.io.tmpdir") + File.separator + 
+            fixPath( userName ) )
+        confDir.mkdirs
+        val confFile = new File( confDir, "jaas.conf");
+        val fw = new FileWriter( confFile );
+        fw.write( confString )
+        fw.close
+        
+        //Set the jaas login config property
+        println("Registering JaasConfiguration: " + confFile.getAbsolutePath)
+        System.setProperty(JaasUtils.JAVA_LOGIN_CONFIG_PARAM, confFile.getAbsolutePath )
+      }catch{
+        case e:Throwable => {
+          e.printStackTrace
+          throw e
+        }        
+      }finally{
+        if ( is != null ) is.close
+      }
+  }
 }

@@ -17,6 +17,7 @@ import org.apache.log4j.Logger
 import java.util.Properties
 import com.ibm.cds.spark.samples.StatusDeserializer
 import com.ibm.cds.spark.samples.config.MessageHubConfig
+import org.apache.kafka.common.security.JaasUtils
 
 class KafkaInputDStream[
   K: ClassTag,
@@ -73,6 +74,13 @@ class KafkaReceiver[
 
   def onStart() {
     logInfo("Starting Kafka Consumer Stream")
+    
+    //Make sure the Jaas Login config param is set
+    val jaasLoginParam = System.getProperty(JaasUtils.JAVA_LOGIN_CONFIG_PARAM);
+    if ( jaasLoginParam == null ){
+      MessageHubConfig.createJaasConfiguration( kafkaParams.get(MessageHubConfig.KAFKA_USER_NAME).get, kafkaParams.get(MessageHubConfig.KAFKA_USER_PASSWORD).get)
+    }
+    
     
     val keyDeserializer = classTag[U].runtimeClass.getConstructor().newInstance().asInstanceOf[Deserializer[K]]
     val valueDeserializer = classTag[T].runtimeClass.getConstructor().newInstance().asInstanceOf[Deserializer[V]]

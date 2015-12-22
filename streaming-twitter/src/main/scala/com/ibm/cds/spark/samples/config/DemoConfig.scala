@@ -114,7 +114,7 @@ class DemoConfig extends Serializable{
     
     if ( ret ){
       config.foreach( (t:(String,Any)) => 
-        if ( t._1.startsWith( "twitter4j") ) System.setProperty( t._1, t._2.asInstanceOf[String] )
+        if ( t._1.startsWith( "twitter4j") && !t._1.startsWith( ignorePrefix ) ) System.setProperty( t._1, t._2.asInstanceOf[String] )
       )
     }
     ret

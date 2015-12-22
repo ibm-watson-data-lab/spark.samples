@@ -78,8 +78,15 @@ object MessageHubStreamingTwitter extends Logging{
     
     kafkaProps.setValueSerializer[StringSerializer];
     
-    if ( !kafkaProps.validateConfiguration() ){
+    if ( !kafkaProps.validateConfiguration("twitter4j.oauth") ){
       return;
+    }
+    
+    //Set the hadoop configuration if needed
+    val checkpointDir = kafkaProps.getConfig( MessageHubConfig.CHECKPOINT_DIR_KEY );
+    if ( checkpointDir.startsWith("swift") ){
+      println("Setting hadoop configuration for swift container")
+      kafkaProps.set_hadoop_config(sc)
     }
     
     //Make sure the topics are already created
@@ -111,6 +118,7 @@ object MessageHubStreamingTwitter extends Logging{
 
       override def onReceiverStopped(receiverStopped: StreamingListenerReceiverStopped) { 
         println("Receiver Stopped: " + receiverStopped.receiverInfo.name)
+        println("Last Error Message: " + receiverStopped.receiverInfo.lastError + " : " + receiverStopped.receiverInfo.lastErrorMessage)
       }
       
       override def onBatchStarted(batchStarted: StreamingListenerBatchStarted){
