@@ -6,6 +6,7 @@
 	<classpathentry kind="src" output="target/scala-2.10/test-classes" path="src/test/scala-2.10"/>
 	<classpathentry kind="src" output="target/scala-2.10/test-classes" path="src/test/scala"/>
 	<classpathentry kind="src" output="target/scala-2.10/test-classes" path="src/test/java"/>
+	<classpathentry kind="lib" path="lib/messagehub.login-1.0.0.jar"/>
 	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.apache.spark/spark-streaming-twitter_2.10/jars/spark-streaming-twitter_2.10-1.4.1.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.twitter4j/twitter4j-stream/jars/twitter4j-stream-3.0.3.jar"/>
@@ -37,7 +38,7 @@
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/com.github.julien-truffaut/monocle-macro_2.10/jars/monocle-macro_2.10-1.0.1.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.apache.kafka/kafka-log4j-appender/jars/kafka-log4j-appender-0.9.0.0.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/log4j/log4j/bundles/log4j-1.2.17.jar"/>
-	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.apache.kafka/kafka-clients/jars/kafka-clients-0.9.0.0.jar"/>
+	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.apache.kafka/kafka-clients/jars/kafka-clients-0.9.0.0.jar" sourcepath="/Users/dtaieb/watsondev/temp/kafka-0.9.0.0-src/clients/src"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.xerial.snappy/snappy-java/bundles/snappy-java-1.1.1.7.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/net.jpountz.lz4/lz4/jars/lz4-1.2.0.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.apache.kafka/kafka_2.10/jars/kafka_2.10-0.9.0.0.jar"/>

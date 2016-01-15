@@ -137,7 +137,8 @@ object MessageHubConfig{
     //Create the jaas configuration
       var is:InputStream = null
       try{
-        is = MessageHubConfig.getClass.getClassLoader.getResourceAsStream("jaas.conf");
+        val packageName = MessageHubConfig.getClass.getPackage.getName.replace('.', File.separatorChar)
+        is = MessageHubConfig.getClass.getClassLoader.getResourceAsStream(packageName + "/jaas.conf");
         val confString = Source.fromInputStream( is ).mkString
           .replace( "$USERNAME", userName)
           .replace( "$PASSWORD", password )
