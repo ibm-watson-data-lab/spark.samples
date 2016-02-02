@@ -32,4 +32,5 @@ unmanagedBase <<= baseDirectory { base => base / "lib" }
 
 assemblyOption in assembly := (assemblyOption in assembly).value.copy(includeScala = false)
 
+resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
 resolvers += "Local couchdb-scala repo" at (baseDirectory.value / "lib/couchdb-scala").toURI.toString
