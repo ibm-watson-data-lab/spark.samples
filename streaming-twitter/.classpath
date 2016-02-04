@@ -12,7 +12,6 @@
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.twitter4j/twitter4j-stream/jars/twitter4j-stream-3.0.3.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.twitter4j/twitter4j-core/jars/twitter4j-core-3.0.3.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.spark-project.spark/unused/jars/unused-1.0.0.jar"/>
-	<classpathentry kind="lib" path="/Users/dtaieb/watsondev/workspaces/cds_workspace/couchdb-scala/target/scala-2.10/releases/com/ibm/couchdb-scala_2.10/0.5.3/couchdb-scala_2.10-0.5.3.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.scalaz/scalaz-core_2.10/bundles/scalaz-core_2.10-7.1.0.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.scalaz/scalaz-effect_2.10/bundles/scalaz-effect_2.10-7.1.0.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/org.http4s/http4s-core_2.10/jars/http4s-core_2.10-0.8.2.jar"/>
@@ -189,5 +188,6 @@
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/com.sun.xml.fastinfoset/FastInfoset/jars/FastInfoset-1.2.12.jar"/>
 	<classpathentry kind="lib" path="/Users/dtaieb/.ivy2/cache/javax.xml.bind/jsr173_api/jars/jsr173_api-1.0.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/couchdb-scala/com/ibm/couchdb-scala_2.10/0.5.3/couchdb-scala_2.10-0.5.3.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
