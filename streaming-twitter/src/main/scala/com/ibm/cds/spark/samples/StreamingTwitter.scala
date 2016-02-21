@@ -45,6 +45,7 @@ import org.apache.spark.rdd.EmptyRDD
 import com.google.common.base.CharMatcher
 import scala.math.BigDecimal
 import com.ibm.cds.spark.samples.config.DemoConfig
+import com.ibm.cds.spark.samples.ToneAnalyzer.ToneCategory
 
 
 
@@ -141,9 +142,9 @@ object StreamingTwitter {
         
         var scoreMap : Map[String, Double] = Map()
         if ( sentiment != null ){
-          for ( tone <- Option( sentiment.children ).getOrElse( Seq() ) ){
-            for ( result <- Option( tone.children ).getOrElse( Seq() ) ){
-              scoreMap.put( result.id, result.normalized_score )
+          for( toneCategory <- Option(sentiment.tone_categories).getOrElse( Seq() )){
+            for ( tone <- Option( toneCategory.tones ).getOrElse( Seq() ) ){
+              scoreMap.put( tone.tone_id, tone.score )
             }
           }
         }

@@ -15,7 +15,6 @@ import org.apache.spark.streaming.receiver.Receiver
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
 import java.util.Properties
-import com.ibm.cds.spark.samples.StatusDeserializer
 import com.ibm.cds.spark.samples.config.MessageHubConfig
 import org.apache.kafka.common.security.JaasUtils
 
@@ -43,7 +42,7 @@ object KafkaStreaming{
     ): ReceiverInputDStream[(K, V)] = {
       val kafkaProps = new MessageHubConfig;
       bootStrapKafkaConfig.copyKafkaOptionKeys( kafkaProps)
-      kafkaProps.setValueDeserializer[StatusDeserializer];
+      kafkaProps.setValueDeserializer[T];
       new KafkaInputDStream[K, V, U, T](ssc, kafkaProps.toImmutableMap, topics)
     }
   }

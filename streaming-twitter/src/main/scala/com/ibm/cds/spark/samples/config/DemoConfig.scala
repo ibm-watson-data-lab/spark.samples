@@ -28,6 +28,7 @@ class DemoConfig extends Serializable{
       registerConfigKey("watson.tone.url" ),
       registerConfigKey("watson.tone.username" ),
       registerConfigKey("watson.tone.password" ),
+      registerConfigKey("watson.api.version", "2016-02-11"),
       registerConfigKey("cloudant.save", "false" )
   )
   
@@ -114,7 +115,11 @@ class DemoConfig extends Serializable{
     
     if ( ret ){
       config.foreach( (t:(String,Any)) => 
-        if ( t._1.startsWith( "twitter4j") && !t._1.startsWith( ignorePrefix ) ) System.setProperty( t._1, t._2.asInstanceOf[String] )
+        try{
+          if ( t._1.startsWith( "twitter4j") && t._2 != null && !t._1.startsWith( Option(ignorePrefix).getOrElse("") ) ) System.setProperty( t._1, t._2.asInstanceOf[String] )
+        }catch{
+          case e:Throwable => println("error" + t)
+        }
       )
     }
     ret

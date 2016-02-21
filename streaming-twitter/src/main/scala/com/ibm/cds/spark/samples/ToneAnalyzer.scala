@@ -22,22 +22,30 @@ object ToneAnalyzer {
   val logger = Logger.getLogger( "com.ibm.cds.spark.samples.ToneAnalyzer" )
   
   val sentimentFactors = Array(
-    ("Cheerfulness", "Cheerfulness" ), 
-    ("Negative", "Negative"), 
-    ("Anger", "Anger"), 
-    ("Analytical", "Analytical"), 
-    ("Confident", "Confident"), 
-    ("Tentative", "Tentative"), 
-    ("Openness", "Openness_Big5"), 
-    ("Agreeableness", "Agreeableness_Big5"), 
-    ("Conscientiousness", "Conscientiousness_Big5")
+      ("Anger","anger"),
+      ("Disgust","disgust"),
+      ("Fear","fear"),
+      ("Joy","joy"),
+      ("Sadness","sadness"),
+      ("Analytical","analytical"),
+      ("Confident","confident"),
+      ("Tentative","tentative"),
+      ("Openness","openness_big5"),
+      ("Conscientiousness","conscientiousness_big5"),
+      ("Extraversion","extraversion_big5"),
+      ("Agreeableness","agreeableness_big5"),
+      ("Emotional Range","neuroticism_big5")
   )
   
   //Class models for Sentiment JSON
-  case class Sentiment( scorecard: String, children: Seq[Tone] )
-  case class Tone( name: String, id: String, children: Seq[ToneResult])
-  case class ToneResult(name: String, id: String, word_count: Double, normalized_score: Double, raw_score: Double, linguistic_evidence: Seq[LinguisticEvidence] )
-  case class LinguisticEvidence( evidence_score: Double, word_count: Double, correlation: String, words : Seq[String])
+  case class DocumentTone( document_tone: Sentiment )
+  case class Sentiment(tone_categories: Seq[ToneCategory]);
+  case class ToneCategory(category_id: String, category_name: String, tones: Seq[Tone]);
+  case class Tone(score: Double, tone_id: String, tone_name: String)
+//  case class Sentiment( scorecard: String, children: Seq[Tone] )
+//  case class Tone( name: String, id: String, children: Seq[ToneResult])
+//  case class ToneResult(name: String, id: String, word_count: Double, normalized_score: Double, raw_score: Double, linguistic_evidence: Seq[LinguisticEvidence] )
+//  case class LinguisticEvidence( evidence_score: Double, word_count: Double, correlation: String, words : Seq[String])
   
   case class Geo( lat: Double, long: Double )
   case class Tweet(author: String, date: String, language: String, text: String, geo : Geo, sentiment : Sentiment )
@@ -48,7 +56,7 @@ object ToneAnalyzer {
     val sentimentResults: String = 
       EntityEncoder[String].toEntity("{\"text\": \"" + StringEscapeUtils.escapeJson( status.text ) + "\"}" ).flatMap { 
         entity =>
-          val s = broadcastVar.value.get("watson.tone.url").get + "/v1/tone"
+          val s = broadcastVar.value.get("watson.tone.url").get + "/v3/tone?version=" + broadcastVar.value.get("watson.api.version").get
           val toneuri: Uri = Uri.fromString( s ).getOrElse( null )
           client(
               Request( 
@@ -72,6 +80,13 @@ object ToneAnalyzer {
             }
           }
       }.run
-    upickle.read[Sentiment](sentimentResults)
+    try{
+      upickle.read[DocumentTone](sentimentResults).document_tone
+    }catch{
+      case e:Throwable => {
+        e.printStackTrace()
+        null
+      }
+    }
   }
 }

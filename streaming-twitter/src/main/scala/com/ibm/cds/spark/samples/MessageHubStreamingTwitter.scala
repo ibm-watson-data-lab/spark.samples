@@ -197,9 +197,9 @@ object MessageHubStreamingTwitter extends Logging{
       val sentiment = ToneAnalyzer.computeSentiment( client, status, broadcastVar )        
       var scoreMap : Map[String, Double] = Map()
       if ( sentiment != null ){
-        for ( tone <- Option( sentiment.children ).getOrElse( Seq() ) ){
-          for ( result <- Option( tone.children ).getOrElse( Seq() ) ){
-            scoreMap.put( result.id, (BigDecimal(result.normalized_score).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble) * 100.0 )
+        for( toneCategory <- Option(sentiment.tone_categories).getOrElse( Seq() )){
+          for ( tone <- Option( toneCategory.tones ).getOrElse( Seq() ) ){
+            scoreMap.put( tone.tone_id, (BigDecimal(tone.score).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble) * 100.0 )
           }
         }
       }
