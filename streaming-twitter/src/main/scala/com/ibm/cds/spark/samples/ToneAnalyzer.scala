@@ -34,7 +34,7 @@ object ToneAnalyzer {
       ("Conscientiousness","conscientiousness_big5"),
       ("Extraversion","extraversion_big5"),
       ("Agreeableness","agreeableness_big5"),
-      ("Emotional Range","neuroticism_big5")
+      ("EmotionalRange","neuroticism_big5")
   )
   
   //Class models for Sentiment JSON

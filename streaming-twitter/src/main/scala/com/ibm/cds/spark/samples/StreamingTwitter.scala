@@ -46,6 +46,7 @@ import com.google.common.base.CharMatcher
 import scala.math.BigDecimal
 import com.ibm.cds.spark.samples.config.DemoConfig
 import com.ibm.cds.spark.samples.ToneAnalyzer.ToneCategory
+import org.apache.spark.Logging
 
 
 
@@ -53,7 +54,7 @@ import com.ibm.cds.spark.samples.ToneAnalyzer.ToneCategory
 /**
  * @author dtaieb
  */
-object StreamingTwitter {
+object StreamingTwitter extends Logging{
   var ssc: StreamingContext = null
   var sqlContext: SQLContext = null
   var workingRDD: RDD[Row] = null
@@ -61,7 +62,8 @@ object StreamingTwitter {
   val logger: Logger = Logger.getLogger( "com.ibm.cds.spark.samples.StreamingTwitter" )
   
   //main method invoked when running as a standalone Spark Application
-  def main(args: Array[String]) {    
+  def main(args: Array[String]) {
+    
     val conf = new SparkConf().setAppName("Spark Streaming Twitter Demo")
     val sc = new SparkContext(conf)
     startTwitterStreaming(sc, Seconds(10));
@@ -94,6 +96,8 @@ object StreamingTwitter {
     
     ssc = new StreamingContext( sc, Seconds(5) )
     
+    ssc.addStreamingListener( new StreamingListener )
+    
     try{
       sqlContext = new SQLContext(sc)
       val keys = config.getConfig("tweets.key").split(",");
@@ -125,9 +129,9 @@ object StreamingTwitter {
           u => Option(u.getLang) 
         }.getOrElse("").startsWith("en") && CharMatcher.ASCII.matchesAllOf(status.getText) && ( keys.isEmpty || keys.exists{status.getText.contains(_)})
       }
-        
+      
+      lazy val client = PooledHttp1Client()
       val rowTweets = tweets.map(status=> {
-        lazy val client = PooledHttp1Client()
         val sentiment = ToneAnalyzer.computeSentiment( client, status, broadcastVar )
         
         var colValues = Array[Any](
@@ -155,42 +159,42 @@ object StreamingTwitter {
       })
   
       rowTweets.foreachRDD( rdd => {
-        try{
-          if ( rdd.count() > 0 ){
+        if( rdd.count > 0 ){
+          try{
             workingRDD = sc.parallelize( rdd.map( t => t._1 ).collect()).union( workingRDD )
-          }
-        }catch{
-            case e: Exception => e.printStackTrace()
-        }
-        val saveToCloudant = broadcastVar.value.get("cloudant.save").get.toBoolean
-        if ( saveToCloudant ){
-          rdd.foreachPartition { iterator => 
-            lazy val client = PooledHttp1Client()
-            var db: CouchDbApi = null;
-            val couch = CouchDb( broadcastVar.value.get("cloudant.hostName").get, 
-                broadcastVar.value.get("cloudant.port").get.toInt, 
-                broadcastVar.value.get("cloudant.https").get.toBoolean, 
-                broadcastVar.value.get("cloudant.username").get, 
-                broadcastVar.value.get("cloudant.password").get
-            );
-            val dbName = "spark-streaming-twitter"
-            couch.dbs.get(dbName).attemptRun match{
-              case -\/(e) => logger.trace("Couch Database does not exist, creating it now"); couch.dbs.create(dbName).run
-              case \/-(a) => println("Connected to cloudant db " + dbName )
-            }
-            val typeMapping = TypeMapping(classOf[ToneAnalyzer.Tweet] -> "Tweet")
-            db = couch.db(dbName, typeMapping)
-            iterator.foreach( t => {
-                saveTweetToCloudant( client, db, t._2._2, t._2._1 )
+        
+            val saveToCloudant = broadcastVar.value.get("cloudant.save").get.toBoolean
+            if ( saveToCloudant ){
+              rdd.foreachPartition { iterator => 
+                lazy val client = PooledHttp1Client()
+                var db: CouchDbApi = null;
+                val couch = CouchDb( broadcastVar.value.get("cloudant.hostName").get, 
+                    broadcastVar.value.get("cloudant.port").get.toInt, 
+                    broadcastVar.value.get("cloudant.https").get.toBoolean, 
+                    broadcastVar.value.get("cloudant.username").get, 
+                    broadcastVar.value.get("cloudant.password").get
+                );
+                val dbName = "spark-streaming-twitter"
+                couch.dbs.get(dbName).attemptRun match{
+                  case -\/(e) => logger.trace("Couch Database does not exist, creating it now"); couch.dbs.create(dbName).run
+                  case \/-(a) => println("Connected to cloudant db " + dbName )
+                }
+                val typeMapping = TypeMapping(classOf[ToneAnalyzer.Tweet] -> "Tweet")
+                db = couch.db(dbName, typeMapping)
+                iterator.foreach( t => {
+                    saveTweetToCloudant( client, db, t._2._2, t._2._1 )
+                  }
+                )
               }
-            )
+            }
+          }catch{
+            case e: Exception => logError(e.getMessage, e )
           }
-        }
-  
+        }  
       })
 
     }catch{
-      case e : Exception => e.printStackTrace
+      case e : Exception => logError(e.getMessage, e )
       return
     }
     ssc.start()
@@ -229,7 +233,7 @@ object StreamingTwitter {
       
       // Execute the actions and process the result
       task.attemptRun match {
-        case -\/(e) => e.printStackTrace();
+        case -\/(e) => logError(e.getMessage, e );
         case \/-(a) => logger.trace("Successfully create new Tweet in Couch Database " + status.getText() )
       }
     }
@@ -253,7 +257,7 @@ object StreamingTwitter {
       
       (sqlContext, df)
     }catch{
-      case e: Exception => {e.printStackTrace(); return null}
+      case e: Exception => {logError(e.getMessage, e ); return null}
     }
   }
  

@@ -116,7 +116,9 @@ class DemoConfig extends Serializable{
     if ( ret ){
       config.foreach( (t:(String,Any)) => 
         try{
-          if ( t._1.startsWith( "twitter4j") && t._2 != null && !t._1.startsWith( Option(ignorePrefix).getOrElse("") ) ) System.setProperty( t._1, t._2.asInstanceOf[String] )
+          if ( t._1.startsWith( "twitter4j") && t._2 != null && (ignorePrefix==null || !t._1.startsWith( ignorePrefix ) ) ) {
+            System.setProperty( t._1, t._2.asInstanceOf[String] )
+          }
         }catch{
           case e:Throwable => println("error" + t)
         }
