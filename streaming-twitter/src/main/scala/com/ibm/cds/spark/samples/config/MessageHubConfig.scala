@@ -10,7 +10,6 @@ import java.io.InputStream
 import java.io.FileWriter
 import java.io.File
 import org.http4s.EntityEncoder
-import org.apache.commons.lang3.StringEscapeUtils
 import org.http4s.Uri
 import org.http4s.client.blaze.PooledHttp1Client
 import org.http4s.Request
@@ -20,6 +19,7 @@ import org.http4s.headers.Authorization
 import org.http4s.BasicCredentials
 import org.http4s.Header
 import javax.net.ssl.SSLContext
+import org.codehaus.jettison.json.JSONObject
 
 
 /**
@@ -93,7 +93,7 @@ class MessageHubConfig extends DemoConfig{
     sslContext.init(null, null, null)
     lazy val client = PooledHttp1Client(sslContext=Option(sslContext))
     for( topic <- topics ){
-      EntityEncoder[String].toEntity("{\"name\": \"" + StringEscapeUtils.escapeJson( topic ) + "\"}" ).flatMap { 
+      EntityEncoder[String].toEntity("{\"name\": \"" + JSONObject.quote( topic ) + "\"}" ).flatMap { 
         entity =>
           val topicUri: Uri = Uri.fromString( getConfig(MessageHubConfig.MESSAGEHUB_REST_URL) + "/admin/topics" ).getOrElse( null )
           println(topicUri)

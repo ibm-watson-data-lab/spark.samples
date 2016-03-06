@@ -2,7 +2,6 @@ package com.ibm.cds.spark.samples
 
 import org.http4s.EntityEncoder
 import org.http4s.Uri
-import org.apache.commons.lang3.StringEscapeUtils
 import org.http4s.client.Client
 import org.http4s.Request
 import org.http4s.BasicCredentials
@@ -13,6 +12,8 @@ import org.http4s.headers.Authorization
 import org.apache.log4j.Logger
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.Logging
+import scala.util.parsing.json.JSON
+import org.codehaus.jettison.json.JSONObject
 
 /**
  * @author dtaieb
@@ -53,7 +54,7 @@ object ToneAnalyzer extends Logging{
     logTrace("Calling sentiment from Watson Tone Analyzer: " + status.text)
     //Get Sentiment on the tweet
     val sentimentResults: String = 
-      EntityEncoder[String].toEntity("{\"text\": \"" + StringEscapeUtils.escapeJson( status.text ) + "\"}" ).flatMap { 
+      EntityEncoder[String].toEntity("{\"text\": " + JSONObject.quote( status.text ) + "}" ).flatMap { 
         entity =>
           val s = broadcastVar.value.get("watson.tone.url").get + "/v3/tone?version=" + broadcastVar.value.get("watson.api.version").get
           val toneuri: Uri = Uri.fromString( s ).getOrElse( null )
@@ -74,7 +75,7 @@ object ToneAnalyzer extends Logging{
              if (response.status.code == 200 ) {
               response.as[String]
              } else {
-              println( "Error received from Watson Tone Analyzer: " + response.as[String] )
+              println( "Error received from Watson Tone Analyzer. Code : " + response.status.code + " reason: " + response.status.reason )
               null
             }
           }
