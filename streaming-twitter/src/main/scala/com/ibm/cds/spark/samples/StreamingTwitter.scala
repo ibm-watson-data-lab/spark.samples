@@ -94,6 +94,9 @@ object StreamingTwitter extends Logging{
     //Broadcast the config to each worker node
     val broadcastVar = sc.broadcast(config.toImmutableMap)
     
+    var canStopTwitterStream = true
+    var batchesProcessed=0
+    
     ssc = new StreamingContext( sc, Seconds(5) )
     
     ssc.addStreamingListener( new StreamingListener )
@@ -157,16 +160,19 @@ object StreamingTwitter extends Logging{
         //Return [Row, (sentiment, status)]
         (Row(colValues.toArray:_*),(sentiment, status))
       })
-  
+
       rowTweets.foreachRDD( rdd => {
-        if( rdd.count > 0 ){
-          try{
+        if(batchesProcessed==0){
+          canStopTwitterStream=false
+        }
+        try{
+          if( rdd.count > 0 ){
+            batchesProcessed += 1
             workingRDD = sc.parallelize( rdd.map( t => t._1 ).collect()).union( workingRDD )
         
             val saveToCloudant = broadcastVar.value.get("cloudant.save").get.toBoolean
             if ( saveToCloudant ){
               rdd.foreachPartition { iterator => 
-                lazy val client = PooledHttp1Client()
                 var db: CouchDbApi = null;
                 val couch = CouchDb( broadcastVar.value.get("cloudant.hostName").get, 
                     broadcastVar.value.get("cloudant.port").get.toInt, 
@@ -187,10 +193,13 @@ object StreamingTwitter extends Logging{
                 )
               }
             }
-          }catch{
-            case e: Exception => logError(e.getMessage, e )
           }
-        }  
+        }catch{
+          case e: InterruptedException=>//Ignore
+          case e: Exception => logError(e.getMessage, e )
+        }finally{
+            canStopTwitterStream = true
+        }        
       })
 
     }catch{
@@ -206,9 +215,22 @@ object StreamingTwitter extends Logging{
     if ( !stopAfter.isZero ){
       //Automatically stop it after 10s
       new Thread( new Runnable {
+        var displayMessage = true;
         def run(){
           Thread.sleep( stopAfter.milliseconds )
-          stopTwitterStreaming
+          var loop = true
+          while(loop){
+            if (canStopTwitterStream){
+              stopTwitterStreaming
+              loop = false
+            }else{
+              if ( displayMessage ){
+                displayMessage = false
+                println("Received directive to stop twitter Stream: Waiting for already received tweets to be processed...")
+              }
+              Thread.sleep(5000L)
+            }
+          }
         }
       }).start
     }
@@ -268,7 +290,7 @@ object StreamingTwitter extends Logging{
     }
     
     println("Stopping Twitter stream. Please wait this may take a while")
-    ssc.stop(stopSparkContext = false, stopGracefully = true)
+    ssc.stop(stopSparkContext = false, stopGracefully = false)
     ssc = null
     println("Twitter stream stopped");
     

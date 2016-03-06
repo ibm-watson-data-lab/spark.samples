@@ -110,7 +110,7 @@ class MessageHubConfig extends DemoConfig{
           ).flatMap { response =>
              response.status.code match {
                case 200 | 202 => println("Successfully created topic: " + topic)
-               case 422 => println("Topic already exists in the server: " + topic)
+               case 422 | 403 => println("Topic already exists in the server: " + topic)
                case _ => throw new IllegalStateException("Error when trying to create topic: " + response.status.code + " Reason: " + response.status.reason)
              }
              response.as[String]

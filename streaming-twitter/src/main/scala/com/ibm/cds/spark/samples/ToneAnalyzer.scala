@@ -12,14 +12,13 @@ import org.http4s.Method
 import org.http4s.headers.Authorization
 import org.apache.log4j.Logger
 import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.Logging
 
 /**
  * @author dtaieb
  */
 
-object ToneAnalyzer {
-  
-  val logger = Logger.getLogger( "com.ibm.cds.spark.samples.ToneAnalyzer" )
+object ToneAnalyzer extends Logging{
   
   val sentimentFactors = Array(
       ("Anger","anger"),
@@ -51,7 +50,7 @@ object ToneAnalyzer {
   case class Tweet(author: String, date: String, language: String, text: String, geo : Geo, sentiment : Sentiment )
  
   def computeSentiment( client: Client, status:StatusAdapter, broadcastVar: Broadcast[Map[String,String]] ) : Sentiment = {
-    logger.trace("Calling sentiment from Watson Tone Analyzer: " + status.text)
+    logTrace("Calling sentiment from Watson Tone Analyzer: " + status.text)
     //Get Sentiment on the tweet
     val sentimentResults: String = 
       EntityEncoder[String].toEntity("{\"text\": \"" + StringEscapeUtils.escapeJson( status.text ) + "\"}" ).flatMap { 

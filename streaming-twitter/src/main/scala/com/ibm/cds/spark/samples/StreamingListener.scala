@@ -37,7 +37,7 @@ class StreamingListener extends org.apache.spark.streaming.scheduler.StreamingLi
 
   override def onReceiverStopped(receiverStopped: StreamingListenerReceiverStopped) { 
     println("Receiver Stopped: " + receiverStopped.receiverInfo.name)
-    println("Last Error Message: " + receiverStopped.receiverInfo.lastError + " : " + receiverStopped.receiverInfo.lastErrorMessage)
+    println("Reason: " + receiverStopped.receiverInfo.lastError + " : " + receiverStopped.receiverInfo.lastErrorMessage)
   }
   
   override def onBatchStarted(batchStarted: StreamingListenerBatchStarted){

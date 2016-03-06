@@ -37,6 +37,13 @@ class DemoConfig extends Serializable{
       throw new IllegalStateException("Missing key: " + key)
     })
   }
+  
+  def cloneConfig():MessageHubConfig={
+    val props = new MessageHubConfig
+    config.foreach{ entry => props.setConfig(entry._1, entry._2)}
+    props
+  }
+  
   def set_hadoop_config(sc:SparkContext){
     val prefix = "fs.swift.service." + getKeyOrFail("name") 
     val hconf = sc.hadoopConfiguration

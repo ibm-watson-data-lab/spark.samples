@@ -22,6 +22,8 @@ import twitter4j.StatusListener
 import twitter4j.TwitterStreamFactory
 import scala.util.parsing.json.JSON
 import java.io.InputStream
+import twitter4j.TwitterStream
+import com.ibm.cds.spark.samples.config.DemoConfig
 
 
 /**
@@ -32,13 +34,29 @@ object KafkaProducerTest {
   Logger.getLogger("org.apache.kafka").setLevel(Level.ALL)
   Logger.getLogger("kafka").setLevel(Level.ALL)
   
-  val kafkaProps = new MessageHubConfig;
-  kafkaProps.setValueSerializer[StatusSerializer]
-  def main(args: Array[String]): Unit = {    
+  var twitterStream : TwitterStream = _;
+  
+  def main(args: Array[String]): Unit = {
+    createTwitterStream();
+  }
+  
+  def createTwitterStream(props: DemoConfig=null):TwitterStream = {
+    if( twitterStream != null){
+      println("Twitter Stream already running. Please call closeTwitterStream first");
+      return twitterStream;
+    }
+    var kafkaProps:MessageHubConfig = null;
+    if ( props == null ){
+      kafkaProps = new MessageHubConfig
+    }else{
+      kafkaProps = props.cloneConfig
+    }
+    kafkaProps.setValueSerializer[StatusSerializer]    
     kafkaProps.validateConfiguration("watson.tone.")
+    kafkaProps.createTopicsIfNecessary( kafkaProps.getConfig(MessageHubConfig.KAFKA_TOPIC_TWEETS ) )
     val kafkaProducer = new org.apache.kafka.clients.producer.KafkaProducer[java.lang.String, Status]( kafkaProps.toImmutableMap() );
     
-    val twitterStream = new TwitterStreamFactory().getInstance();
+    twitterStream = new TwitterStreamFactory().getInstance();
     twitterStream.addListener( new StatusListener(){
       var lastSent:Long = 0;
       def onStatus(status: Status){
@@ -76,6 +94,20 @@ object KafkaProducerTest {
     
     //Start twitter stream sampling
     twitterStream.sample();
+    
+    println("Twitter stream started. Tweets will flow to MessageHub instance. Please call closeTwitterStream to stop the stream")
+    twitterStream
+  }
+  
+  def closeTwitterStream(){
+    if ( twitterStream==null){
+      println("Nothing to close. Twitter stream has not been started")
+    }else{
+      println("Stopping twitter stream");
+      twitterStream.shutdown()
+      twitterStream=null
+      println("Twitter Stream stopped")
+    }
   }
 }
 
@@ -98,9 +130,10 @@ class StatusSerializer extends Serializer[Status]{
 }
 object KafkaConsumerTest {
   def main(args: Array[String]): Unit = {
-    val kafkaConsumer = new KafkaConsumer[java.lang.String, StatusAdapter](KafkaProducerTest.kafkaProps.toImmutableMap, new StringDeserializer(), new StatusDeserializer())
+    val kafkaProps = new MessageHubConfig
+    val kafkaConsumer = new KafkaConsumer[java.lang.String, StatusAdapter](kafkaProps.toImmutableMap, new StringDeserializer(), new StatusDeserializer())
     
-    kafkaConsumer.subscribe( List(KafkaProducerTest.kafkaProps.getConfig(MessageHubConfig.KAFKA_TOPIC_TWEETS )) )
+    kafkaConsumer.subscribe( List(kafkaProps.getConfig(MessageHubConfig.KAFKA_TOPIC_TWEETS )) )
     new Thread( new Runnable {
       def run(){
         while( true ){
