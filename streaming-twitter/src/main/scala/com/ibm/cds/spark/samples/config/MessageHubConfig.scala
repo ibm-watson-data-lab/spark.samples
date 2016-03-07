@@ -93,7 +93,7 @@ class MessageHubConfig extends DemoConfig{
     sslContext.init(null, null, null)
     lazy val client = PooledHttp1Client(sslContext=Option(sslContext))
     for( topic <- topics ){
-      EntityEncoder[String].toEntity("{\"name\": \"" + JSONObject.quote( topic ) + "\"}" ).flatMap { 
+      EntityEncoder[String].toEntity("{\"name\":" + JSONObject.quote( topic ) + "}" ).flatMap { 
         entity =>
           val topicUri: Uri = Uri.fromString( getConfig(MessageHubConfig.MESSAGEHUB_REST_URL) + "/admin/topics" ).getOrElse( null )
           println(topicUri)

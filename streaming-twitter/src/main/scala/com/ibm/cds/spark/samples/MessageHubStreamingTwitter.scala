@@ -23,7 +23,6 @@ import com.google.common.base.CharMatcher
 import com.ibm.cds.spark.samples.config.MessageHubConfig
 import com.ibm.cds.spark.samples.dstream.KafkaStreaming.KafkaStreamingContextAdapter
 import twitter4j.Status
-import org.apache.spark.streaming.scheduler.StreamingListener
 import org.apache.spark.streaming.scheduler.StreamingListenerBatchStarted
 import org.apache.spark.streaming.scheduler.StreamingListenerBatchCompleted
 import com.ibm.cds.spark.samples.config.DemoConfig
@@ -107,28 +106,7 @@ object MessageHubStreamingTwitter extends Logging{
       );
     }
     
-    ssc.addStreamingListener( new StreamingListener{
-      override def onReceiverStarted(receiverStarted: StreamingListenerReceiverStarted) { 
-        println("Receiver Started: " + receiverStarted.receiverInfo.name )
-      }
-
-      override def onReceiverError(receiverError: StreamingListenerReceiverError) { 
-        println("Receiver Error: " + receiverError.receiverInfo.lastError)
-      }
-
-      override def onReceiverStopped(receiverStopped: StreamingListenerReceiverStopped) { 
-        println("Receiver Stopped: " + receiverStopped.receiverInfo.name)
-        println("Last Error Message: " + receiverStopped.receiverInfo.lastError + " : " + receiverStopped.receiverInfo.lastErrorMessage)
-      }
-      
-      override def onBatchStarted(batchStarted: StreamingListenerBatchStarted){
-        println("Batch started with " + batchStarted.batchInfo.numRecords + " records")
-      }
-      
-      override def onBatchCompleted(batchCompleted: StreamingListenerBatchCompleted){
-        println("Batch completed with " + batchCompleted.batchInfo.numRecords + " records");
-      }
-    })
+    ssc.addStreamingListener( new StreamingListener() )
     
     new Thread( new Runnable() {
       def run(){
@@ -142,7 +120,7 @@ object MessageHubStreamingTwitter extends Logging{
                 if ( task != null ){
                   val producerRecord = new ProducerRecord[String,String](task._1, "tweet", task._2 )
                   val metadata = kafkaProducer.send( producerRecord ).get;
-                  println("Sent record " + metadata.offset() + " Topic " + task._1)
+                  logInfo("Sent record " + metadata.offset() + " Topic " + task._1)
                 }
             }catch{
                 case e:Throwable => logError(e.getMessage, e)
@@ -294,7 +272,7 @@ object MessageHubStreamingTwitter extends Logging{
   }
 }
 
-object TweetsMetricJsonSerializer{
+object TweetsMetricJsonSerializer extends Logging{
   def serialize(value: Seq[(String,Long)] ): String = {   
     val sb = new StringBuilder("[")
     var comma = ""
@@ -303,12 +281,12 @@ object TweetsMetricJsonSerializer{
       comma=","
     })
     sb.append("]")
-    println("Serialized json: " + sb)
+    logInfo("Serialized json: " + sb)
     sb.toString()
   }
 }
 
-object ToneScoreJsonSerializer{
+object ToneScoreJsonSerializer extends Logging{
   def serializeList[U:ClassTag]( label: String, value: List[U] ):String = {
     val sb = new StringBuilder("[\"" + label.replaceAll("\"", "") + "\"")
     value.foreach { item => {
@@ -336,7 +314,7 @@ object ToneScoreJsonSerializer{
       comma=","
     })
     sb.append("]")
-    println("Serialized size: " + value.size + ". Tone json: " + sb)
+    logInfo("Serialized size: " + value.size + ". Tone json: " + sb)
     sb.toString()
   }
 }

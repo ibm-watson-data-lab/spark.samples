@@ -24,12 +24,13 @@ import scala.util.parsing.json.JSON
 import java.io.InputStream
 import twitter4j.TwitterStream
 import com.ibm.cds.spark.samples.config.DemoConfig
+import org.apache.spark.Logging
 
 
 /**
  * @author dtaieb
  */
-object KafkaProducerTest {
+object KafkaProducerTest extends Logging{
   //Very verbose, enable only if necessary
   Logger.getLogger("org.apache.kafka").setLevel(Level.ALL)
   Logger.getLogger("kafka").setLevel(Level.ALL)
@@ -62,11 +63,11 @@ object KafkaProducerTest {
       def onStatus(status: Status){
         if ( lastSent == 0 || System.currentTimeMillis() - lastSent > 200L){
           lastSent = System.currentTimeMillis()
-          println("Got a status  " + status.getText )
+          logInfo("Got a status  " + status.getText )
           val producerRecord = new ProducerRecord(kafkaProps.getConfig(MessageHubConfig.KAFKA_TOPIC_TWEETS ), "tweet", status )
           try{
             val metadata = kafkaProducer.send( producerRecord ).get(2000, TimeUnit.SECONDS);
-            println("Successfully sent record: Topic: " + metadata.topic + " Offset: " + metadata.offset )
+            logInfo("Successfully sent record: Topic: " + metadata.topic + " Offset: " + metadata.offset )
           }catch{
             case e:Throwable => e.printStackTrace
           }
@@ -76,11 +77,12 @@ object KafkaProducerTest {
         
       }
       def onTrackLimitationNotice( numLimitation : Int){
-        
+        println("Received track limitation notice from Twitter: " + numLimitation)
       }
       
       def onException( e: Exception){
-        
+        println("Unexpected error from twitterStream: " + e.getMessage);
+        logError(e.getMessage, e)
       }
       
       def onScrubGeo(lat: Long, long: Long ){
