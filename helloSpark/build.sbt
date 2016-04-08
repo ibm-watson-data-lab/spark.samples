@@ -1,11 +1,11 @@
 name := "helloSpark"
 
-version := "1.0"
+version := "2.1"
 
 scalaVersion := "2.10.4"
 
 libraryDependencies ++= {
-  val sparkVersion =  "1.3.1"
+  val sparkVersion =  "1.6.0"
   Seq(
     "org.apache.spark" %%  "spark-core"	  %  sparkVersion % "provided",
     "org.apache.spark" %%  "spark-sql"	  %  sparkVersion % "provided",
