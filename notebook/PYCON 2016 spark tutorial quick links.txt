@@ -1,0 +1,15 @@
+Bluemix:
+https://console.ng.bluemix.net
+
+FlightStats:
+https://developer.flightstats.com/signup
+https://developer.flightstats.com/admin/applications
+
+Simple Data Pipe:
+https://github.com/ibm-cds-labs/simple-data-pipe
+
+Flight Predict Notebook, Slides 36 & 37:
+https://github.com/ibm-cds-labs/simple-data-pipe-connector-flightstats/raw/master/notebook/Flight%20Predict%20PyCon%202016.ipynb
+
+Car Notebook, Slide 21:
+https://github.com/ibm-cds-labs/spark.samples/raw/master/notebook/DashDB%20Twitter%20Car%202015%20Python%20Notebook.ipynb
