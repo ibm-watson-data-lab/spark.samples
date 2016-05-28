@@ -13,3 +13,7 @@ https://github.com/ibm-cds-labs/simple-data-pipe-connector-flightstats/raw/maste
 
 Car Notebook, Slide 21:
 https://github.com/ibm-cds-labs/spark.samples/raw/master/notebook/DashDB%20Twitter%20Car%202015%20Python%20Notebook.ipynb
+
+
+SIMPLE DATA PIPE package.json:
+"simple-data-pipe-connector-flightstats":"git://github.com/ibm-cds-labs/simple-data-pipe-connector-flightstats.git"
