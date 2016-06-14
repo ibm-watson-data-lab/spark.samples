@@ -88,6 +88,8 @@ class PackageManager(object):
             #download package
             try:
                 d=downloader.Downloader(base) if base is not None else downloader.Downloader()
+                if not artifact.version or artifact.version=='0':
+                    artifact.version = d.resolver._find_latest_version_available(artifact)
                 results = d.download(artifact,filename=self.DOWNLOAD_DIR)
                 if not results[1]:
                     print("Error downloading package {0}".format(str(artifact)))
