@@ -76,7 +76,6 @@ class PackageManager(object):
         return artifact
     
     def installPackage(self, artifact, base=None, sc=None):
-        print(str(sc))
         artifact = self._toArtifact(artifact)
         #Test if we already have a version installed
         res=self.fetchArtifact(artifact)
