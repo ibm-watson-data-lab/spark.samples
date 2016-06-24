@@ -13,22 +13,3 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # -------------------------------------------------------------------------------
-
-class PrintColors:
-    PURPLE = '\x1b[35m'
-    CYAN = '\x1b[36m'
-    DARKCYAN = '\x1b[36m'
-    BLUE = '\x1b[34m'
-    GREEN = '\x1b[32m'
-    YELLOW = '\x1b[33m'
-    RED = '\x1b[31m'
-    BOLD = '\x1b[1m'
-    UNDERLINE = '\x1b[4m'
-    BLINK = '\x1b[5m'
-    END = '\x1b[0m'
-    
-def printEx(message, color=None):
-    if not color:
-        print(message)
-    else:
-        print( color + message + PrintColors.END)

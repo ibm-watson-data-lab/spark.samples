@@ -18,7 +18,7 @@ from __future__ import print_function
 import sqlite3
 import sys
 import os
-from printEx import *
+from display.printEx import *
 from maven import Artifact
 from maven import downloader
 from maven import RequestException
