@@ -18,9 +18,16 @@ from ..display import Display
 from pyspark.sql import DataFrame
     
 class TableDisplay(Display):
-    def doRender(self):
-        if isinstance(self.entity, DataFrame):
-            self.renderDataFrame()
+    def doRender(self, handlerId):
+        entity=self.entity
+        clazz = entity.__class__.__name__        
+        if( clazz == "GraphFrame"):
+            if handlerId == "edges":
+                entity=entity.edges
+            else:
+                entity=entity.vertices
+        if isinstance(entity, DataFrame):
+            self.renderDataFrame(entity)
             return
             
         self._addHTML("""
@@ -28,14 +35,14 @@ class TableDisplay(Display):
         """
         )
         
-    def renderDataFrame(self):
-        schema = self.entity.schema
+    def renderDataFrame(self,entity):
+        schema = entity.schema
         self._addHTML("""<table class="table table-striped"><thead>""")                   
         for field in schema.fields:
             self._addHTML("<th>" + field.name + "</th>")
         self._addHTML("</thead>")
         self._addHTML("<tbody>")
-        for row in self.entity.take(100):
+        for row in entity.take(100):
             self._addHTML("<tr>")
             for field in schema.fields:
                 self._addHTML("<td>" + self._safeString(row[field.name]) + "</td>")

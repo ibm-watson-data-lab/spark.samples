@@ -17,6 +17,7 @@
 from .display import *
 from table.display import *
 from graph.display import *
+import traceback
 
 class PrintColors(object):
     PURPLE = '\x1b[35m'
@@ -41,5 +42,6 @@ def display(entity, handlerId=None):
     selectedHandler=getSelectedHandler(handlerId, entity)
     
     displayHandler = selectedHandler.newDisplayHandler(entity)
+    displayHandler.callerText = traceback.extract_stack(limit=2)[0][3]
     displayHandler.noChrome(handlerId is not None)
-    displayHandler.render()
+    displayHandler.render(handlerId)

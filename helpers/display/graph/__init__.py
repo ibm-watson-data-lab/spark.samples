@@ -18,6 +18,7 @@ from .display import GraphDisplay
 from ..display import *
 
 class GraphDisplayMeta(DisplayHandlerMeta):
+    @addId
     def getMenuInfo(self,entity):
         clazz = entity.__class__.__name__
         if clazz == "GraphFrame":
@@ -25,7 +26,7 @@ class GraphDisplayMeta(DisplayHandlerMeta):
             fnames=[sf.name for sf in entity.vertices.schema.fields]
             if "longitude" in fnames and "latitude" in fnames:
                 return [
-                    {"categoryId": "Map", "title": "Graph Map", "icon":"fa-map-marker"}
+                    {"categoryId": "Map", "title": "Graph Map", "icon":"fa-map-marker", "id":"graphMap"}
                 ]
         
         return []

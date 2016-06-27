@@ -16,13 +16,15 @@
 from abc import ABCMeta,abstractmethod
 from IPython.display import display as ipythonDisplay, HTML, Javascript
 import sys
+import uuid
 
 handlers=[]
+globalMenuInfos={}
 def registerDisplayHandler(handlerMetadata):
     handlers.append(handlerMetadata)
 def getSelectedHandler(handlerId, entity):
     if handlerId is not None:
-        return handlers[handlerId]
+        return globalMenuInfos[handlerId]['handler']
     else:
         #get the first handler that can render this object
         for handler in handlers:
@@ -31,10 +33,23 @@ def getSelectedHandler(handlerId, entity):
                 return handler
     #we didn't find any, return the first
     return handlers[0]
+  
+def addId(func):
+    def wrapper(*args,**kwargs):
+        global globalMenuInfos
+        menuInfos = func(*args, **kwargs)
+        for menuInfo in menuInfos:
+            if 'id' not in menuInfo:
+                raise Exception("MenuInfo json must have a unique id")            
+            globalMenuInfos[menuInfo['id']]=menuInfo
+            menuInfo['handler']=args[0]
+        return menuInfos
+    return wrapper
 
 class DisplayHandlerMeta(object):
     __metaclass__ = ABCMeta
     @abstractmethod
+    @addId
     def getMenuInfo(self):
         pass
     @abstractmethod
@@ -49,19 +64,15 @@ class Display(object):
         self.html=""
         self.scripts=list()
     
-    def render(self):
-        self.doRender()
+    def render(self, handlerId):
+        self.doRender(handlerId)
         #generate final HTML
         ipythonDisplay(HTML(self._wrapBeforeHtml() + self.html + self._wrapAfterHtml()))
         self._addScriptElements()
          
     @abstractmethod
-    def doRender(self):
+    def doRender(self, handlerId):
         raise Exception("doRender method not implemented")
-    
-    #@abstractmethod
-    #def canRender(self):
-    #    pass
     
     def noChrome(self, flag):
         self.noChrome=flag
@@ -83,6 +94,8 @@ class Display(object):
         self.scripts.append(script)
         
     def _addScriptElements(self):
+        if len(self.scripts)==0:
+            return
         code="(function(){var g,s=document.getElementsByTagName('script')[0];"
         for script in self.scripts:
             code+="""
@@ -97,7 +110,7 @@ class Display(object):
         ipythonDisplay(Javascript(code))
     
     def _wrapBeforeHtml(self):
-        if ( self.noChrome ):
+        if self.noChrome:
             return ""
         
         menuTree=dict()    
@@ -111,18 +124,19 @@ class Display(object):
                 else:
                     menuTree[categoryId].append(menuInfo) 
         
-        html=""        
+        html=""
         for key, menuInfoList in menuTree.iteritems():
             if len(menuInfoList)==1:
                 html+="""
-                    <a class="btn btn-small display-type-button active" id="toto" title="{0}">
-                        <i class="fa {1}"></i>
+                    <a class="btn btn-small display-type-button active" id="menu{0}" title="{1}">
+                        <i class="fa {2}"></i>
                     </a>
-                """.format(menuInfoList[0]['title'], menuInfoList[0]['icon'])
+                    {3}
+                """.format(self.getPrefix(menuInfoList[0]), menuInfoList[0]['title'], menuInfoList[0]['icon'], self._getMenuHandlerScript(menuInfoList[0]))
             else:
                 html+="""
                     <div class="btn-group btn-small" style="padding-left: 4px; padding-right: 4px;">
-                        <a class="btn btn-small display-type-button" title="{0}">
+                        <a class="btn btn-small display-type-button" title="{0}" style="text-decoration:none">
                             <i class="{1}"></i>
                         </a>
                         <a class="btn btn-small dropdown-toggle" data-toggle="dropdown" style="padding-left: 6px; padding-right: 6px">
@@ -135,19 +149,61 @@ class Display(object):
                 for menuInfo in menuInfoList:                    
                     html+="""
                                     <li>
-                                        <a href="#" class="display-type-button">
-                                            <i class="fa {0}"></i>
-                                            {1}
+                                        <a href="#" class="display-type-button" id="menu{0}" style="text-decoration:none">
+                                            <i class="fa {1}"></i>
+                                            {2}
                                         </a>
+                                        {3}
                                     </li>
-                    """.format(menuInfo['icon'],menuInfo['title'])
+                    """.format(self.getPrefix(menuInfo), menuInfo['icon'],menuInfo['title'], self._getMenuHandlerScript(menuInfo))
                 html+="""
                                 </ul>
                             </div>
                         </div>
                     </div>
                 """
+        html+="""<div id="wrapper{0}">""".format(self.getPrefix())
         return html
+    
+    def getPrefix(self, menuInfo=None):
+        if ( not hasattr(self, 'prefix') ):
+            self.prefix = str(uuid.uuid4())[:8]
+        return self.prefix if menuInfo is None else (self.prefix + "-" + menuInfo['id'])
+        
+    def _getMenuHandlerScript(self, menuInfo):
+        return """
+            <script>
+                $('#menu{0}').on('click', function () {{
+                    //Resend the display command
+                    var callbacks = {{
+                        iopub:{{
+                            output:function(msg){{
+                                var msg_type=msg.header.msg_type;
+                                var content = msg.content;
+                                var text;
+                                if(msg_type==="stream"){{
+                                    text=content.text;
+                                }}else if (msg_type==="display_data" || msg_type==="execute_result"){{
+                                    text=content.data["application/javascript"] || content.data["text/html"]||content.data["text/markdown"]
+                                        ||content.data["text/latex"]||content.data["text/plain"];
+                                }}else{{
+                                    return alert("An error occurred while executing the command");
+                                }}
+                                console.log("msg", msg);
+                                $('#wrapper{1}').html(text)
+                            }}
+                        }}
+                    }}
+                    
+                    console.log("Running command: {2}");
+                    IPython.notebook.session.kernel.execute("{2}", callbacks, {{silent:false, store_history:false}});
+                }})
+            </script>
+        """.format(self.getPrefix(menuInfo), self.getPrefix(), self._genDisplayScript(menuInfo))
+        
+    def _genDisplayScript(self, menuInfo):
+        k=self.callerText.rfind(")")
+        return self.callerText[:k]+",handlerId='"+menuInfo['id'] + "'" + self.callerText[k:]
         
     def getCategoryTitle(self,catId):
         if catId == "Table":
@@ -168,4 +224,4 @@ class Display(object):
     def _wrapAfterHtml(self):
         if ( self.noChrome ):
             return ""
-        return ""
+        return "</div>"

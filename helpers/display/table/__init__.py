@@ -18,11 +18,17 @@ from .display import TableDisplay
 from ..display import *
 
 class TableDisplayMeta(DisplayHandlerMeta):
+    @addId
     def getMenuInfo(self,entity):
         clazz = entity.__class__.__name__
         if clazz == "DataFrame":
             return [
-                {"categoryId": "Table", "title": "DataFrame Table", "icon": "fa-table"}
+                {"categoryId": "Table", "title": "DataFrame Table", "icon": "fa-table", "id": "dataframe"}
+            ]
+        elif clazz == "GraphFrame":
+            return [
+                {"categoryId": "Table", "title": "Graph Vertices", "icon": "fa-location-arrow", "id":"vertices"},
+                {"categoryId": "Table", "title": "Graph Edges", "icon": "fa-link", "id":"edges"}
             ]
         else:
             return []

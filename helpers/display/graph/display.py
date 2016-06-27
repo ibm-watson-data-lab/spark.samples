@@ -17,10 +17,9 @@
 from ..display import Display
 from pyspark.sql import DataFrame
 import yaml
-import uuid
 
 class GraphDisplay(Display):
-    def doRender(self):
+    def doRender(self,handlerId):
         self._addScriptElement("https://mbostock.github.io/d3/talk/20111116/d3/d3.js")
         self._addScriptElement("https://mbostock.github.io/d3/talk/20111116/d3/d3.geo.js")
         self._addScriptElement("https://mbostock.github.io/d3/talk/20111116/d3/d3.geom.js")
@@ -31,7 +30,7 @@ class GraphDisplay(Display):
             graphNodesJson+=("," if len(graphNodesJson)>1 else "") + str(r)
         graphNodesJson+="}"
         #print(graphNodesJson)
-        prefix=str(uuid.uuid4())[:8]
+        prefix=self.getPrefix()
         
         self._addHTML("""
             <style type="text/css">
