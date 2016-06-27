@@ -17,6 +17,30 @@ from abc import ABCMeta,abstractmethod
 from IPython.display import display as ipythonDisplay, HTML, Javascript
 import sys
 
+handlers=[]
+def registerDisplayHandler(handlerMetadata):
+    handlers.append(handlerMetadata)
+def getSelectedHandler(handlerId, entity):
+    if handlerId is not None:
+        return handlers[handlerId]
+    else:
+        #get the first handler that can render this object
+        for handler in handlers:
+            menuInfos = handler.getMenuInfo(entity)
+            if ( menuInfos is not None and len(menuInfos)>0 ):
+                return handler
+    #we didn't find any, return the first
+    return handlers[0]
+
+class DisplayHandlerMeta(object):
+    __metaclass__ = ABCMeta
+    @abstractmethod
+    def getMenuInfo(self):
+        pass
+    @abstractmethod
+    def newDisplayHandler(self,entity):
+        pass
+    
 class Display(object):
     __metaclass__ = ABCMeta
     
@@ -27,12 +51,20 @@ class Display(object):
     
     def render(self):
         self.doRender()
-        ipythonDisplay(HTML(self.html))
+        #generate final HTML
+        ipythonDisplay(HTML(self._wrapBeforeHtml() + self.html + self._wrapAfterHtml()))
         self._addScriptElements()
          
     @abstractmethod
     def doRender(self):
         raise Exception("doRender method not implemented")
+    
+    #@abstractmethod
+    #def canRender(self):
+    #    pass
+    
+    def noChrome(self, flag):
+        self.noChrome=flag
         
     def _addHTML(self, fragment):
         self.html+=fragment
@@ -63,6 +95,77 @@ class Display(object):
             """.format(script)
         code+="})();"
         ipythonDisplay(Javascript(code))
-
-        
     
+    def _wrapBeforeHtml(self):
+        if ( self.noChrome ):
+            return ""
+        
+        menuTree=dict()    
+        for handler in handlers:
+            for menuInfo in handler.getMenuInfo(self.entity):
+                categoryId=menuInfo['categoryId']
+                if categoryId is None:
+                    raise Exception("Handler missing category id")
+                elif not categoryId in menuTree:
+                    menuTree[categoryId]=[menuInfo]
+                else:
+                    menuTree[categoryId].append(menuInfo) 
+        
+        html=""        
+        for key, menuInfoList in menuTree.iteritems():
+            if len(menuInfoList)==1:
+                html+="""
+                    <a class="btn btn-small display-type-button active" id="toto" title="{0}">
+                        <i class="fa {1}"></i>
+                    </a>
+                """.format(menuInfoList[0]['title'], menuInfoList[0]['icon'])
+            else:
+                html+="""
+                    <div class="btn-group btn-small" style="padding-left: 4px; padding-right: 4px;">
+                        <a class="btn btn-small display-type-button" title="{0}">
+                            <i class="{1}"></i>
+                        </a>
+                        <a class="btn btn-small dropdown-toggle" data-toggle="dropdown" style="padding-left: 6px; padding-right: 6px">
+                            <b class="caret"></b>
+                        </a>
+                        <div class="dropdown-menu" role="menu">
+                            <div class="row-fluid" style="width: 220px;">
+                                <ul class="span6 multicol-menu">
+                """.format(self.getCategoryTitle(key), self.getCategoryIconClass(key))
+                for menuInfo in menuInfoList:                    
+                    html+="""
+                                    <li>
+                                        <a href="#" class="display-type-button">
+                                            <i class="fa {0}"></i>
+                                            {1}
+                                        </a>
+                                    </li>
+                    """.format(menuInfo['icon'],menuInfo['title'])
+                html+="""
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                """
+        return html
+        
+    def getCategoryTitle(self,catId):
+        if catId == "Table":
+            return "Table"
+        elif catId == "Map":
+            return "Map"
+        else:
+            return ""
+            
+    def getCategoryIconClass(self,catId):
+        if catId == "Table":
+            return "fa-table"
+        elif catId == "Map":
+            return "fa-map"
+        else:
+            return ""
+        
+    def _wrapAfterHtml(self):
+        if ( self.noChrome ):
+            return ""
+        return ""

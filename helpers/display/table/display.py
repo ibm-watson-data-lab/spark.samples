@@ -16,7 +16,7 @@
 
 from ..display import Display
 from pyspark.sql import DataFrame
-
+    
 class TableDisplay(Display):
     def doRender(self):
         if isinstance(self.entity, DataFrame):
@@ -24,24 +24,13 @@ class TableDisplay(Display):
             return
             
         self._addHTML("""
-        <table class="table table-bordered table-condensed table-hover">
-            <thead>
-                <th>col1</th>
-                <th>col2</th>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Row1 Col1 value</td>
-                    <td>Row1 Col2 Value</td>
-                </tr>
-            </tbody>
-        </table>
+            <b>Unable to display object</b>
         """
         )
         
     def renderDataFrame(self):
         schema = self.entity.schema
-        self._addHTML("""<table class="table table-bordered table-condensed table-hover"><thead>""")                   
+        self._addHTML("""<table class="table table-striped"><thead>""")                   
         for field in schema.fields:
             self._addHTML("<th>" + field.name + "</th>")
         self._addHTML("</thead>")

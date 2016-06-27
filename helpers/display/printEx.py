@@ -14,6 +14,7 @@
 # limitations under the License.
 # -------------------------------------------------------------------------------
 
+from .display import *
 from table.display import *
 from graph.display import *
 
@@ -35,9 +36,10 @@ def printEx(message, color=None):
         print(message)
     else:
         print( color + message + PrintColors.END)
-        
-def display(entity, graphMap=False):
-    if graphMap:
-        GraphDisplay(entity).render()
-    else:
-        TableDisplay(entity).render()
+    
+def display(entity, handlerId=None):
+    selectedHandler=getSelectedHandler(handlerId, entity)
+    
+    displayHandler = selectedHandler.newDisplayHandler(entity)
+    displayHandler.noChrome(handlerId is not None)
+    displayHandler.render()

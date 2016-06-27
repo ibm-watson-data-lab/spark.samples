@@ -13,3 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # -------------------------------------------------------------------------------
+
+from .display import TableDisplay
+from ..display import *
+
+class TableDisplayMeta(DisplayHandlerMeta):
+    def getMenuInfo(self,entity):
+        clazz = entity.__class__.__name__
+        if clazz == "DataFrame":
+            return [
+                {"categoryId": "Table", "title": "DataFrame Table", "icon": "fa-table"}
+            ]
+        else:
+            return []
+    def newDisplayHandler(self,entity):
+        return TableDisplay(entity)
+
+registerDisplayHandler(TableDisplayMeta())

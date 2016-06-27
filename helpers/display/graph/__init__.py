@@ -15,3 +15,22 @@
 # -------------------------------------------------------------------------------
 
 from .display import GraphDisplay
+from ..display import *
+
+class GraphDisplayMeta(DisplayHandlerMeta):
+    def getMenuInfo(self,entity):
+        clazz = entity.__class__.__name__
+        if clazz == "GraphFrame":
+            #Check that we have a longitude and latitude in the vertices dataframe
+            fnames=[sf.name for sf in entity.vertices.schema.fields]
+            if "longitude" in fnames and "latitude" in fnames:
+                return [
+                    {"categoryId": "Map", "title": "Graph Map", "icon":"fa-map-marker"}
+                ]
+        
+        return []
+            
+    def newDisplayHandler(self,entity):
+        return GraphDisplay(entity)
+        
+registerDisplayHandler(GraphDisplayMeta())
