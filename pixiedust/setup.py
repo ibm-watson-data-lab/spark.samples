@@ -1,6 +1,6 @@
 from setuptools import setup
 
-setup(name='SparkNotebookHelpers',
+setup(name='pixiedust',
       version='0.1',
       description='Misc helpers for Spark Python Notebook',
       url='',

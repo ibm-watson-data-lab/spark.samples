@@ -28,3 +28,5 @@ streaming-twitter/.settings/org.scala-ide.sdt.core.prefs
 streaming-twitter/config/MessageHubYP.properties
 
 *.pyc
+
+pixiedust/pixiedust.egg-info
