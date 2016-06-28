@@ -162,7 +162,10 @@ class Display(object):
                         </div>
                     </div>
                 """
-        html+="""<div id="wrapper{0}">""".format(self.getPrefix())
+        html+="""
+            <div id="wrapperJS{0}"></div>
+            <div id="wrapperHTML{0}">
+        """.format(self.getPrefix())
         return html
     
     def getPrefix(self, menuInfo=None):
@@ -180,12 +183,15 @@ class Display(object):
                             output:function(msg){{
                                 var msg_type=msg.header.msg_type;
                                 var content = msg.content;
-                                var text;
                                 if(msg_type==="stream"){{
-                                    text=content.text;
+                                    $('#wrapperHTML{1}').html(content.text);
                                 }}else if (msg_type==="display_data" || msg_type==="execute_result"){{
-                                    text=content.data["application/javascript"] || content.data["text/html"]||content.data["text/markdown"]
-                                        ||content.data["text/latex"]||content.data["text/plain"];
+                                    if (content.data["text/html"]){{
+                                        $('#wrapperHTML{1}').html(content.data["text/html"]);
+                                    }}                                    
+                                    if (content.data["application/javascript"]){{
+                                        $('#wrapperJS{1}').html("<script type=\\\"text/javascript\\\">"+content.data["application/javascript"]+"</s" + "cript>");
+                                    }}
                                 }}else{{
                                     return alert("An error occurred while executing the command");
                                 }}
@@ -196,6 +202,9 @@ class Display(object):
                     }}
                     
                     console.log("Running command: {2}");
+                    $('#wrapperJS{1}').html("")
+                    $('#wrapperHTML{1}').html('<div style="width:100px;height:60px;left:47%;position:relative"><i class="fa fa-circle-o-notch fa-spin" style="font-size:48px"></i></div>'+
+                    '<div style="text-align:center">Loading your data. Please wait...</div>');
                     IPython.notebook.session.kernel.execute("{2}", callbacks, {{silent:false, store_history:false}});
                 }})
             </script>
