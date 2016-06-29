@@ -15,3 +15,4 @@
 # -------------------------------------------------------------------------------
 
 from .display import Display
+from pixiedust.display.printEx import *

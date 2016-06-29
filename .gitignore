@@ -30,3 +30,5 @@ streaming-twitter/config/MessageHubYP.properties
 *.pyc
 
 pixiedust/pixiedust.egg-info
+
+pixiedust/dist

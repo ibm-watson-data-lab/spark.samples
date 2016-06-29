@@ -96,15 +96,29 @@ class Display(object):
     def _addScriptElements(self):
         if len(self.scripts)==0:
             return
-        code="(function(){var g,s=document.getElementsByTagName('script')[0];"
+        code="""
+            (function(){
+                var g,s=document.getElementsByTagName('script')[0];
+                function hasScriptElement(script){
+                    var scripts = document.getElementsByTagName('script');
+                    for (var i=0;i<scripts.length;i++){
+                        if(scripts[i].src===script){
+                            return true;
+                        }
+                    }
+                    return false;
+                }                
+        """
         for script in self.scripts:
             code+="""
-            g=document.createElement('script');
-            g.type='text/javascript';
-            g.defer=false; 
-            g.async=false; 
-            g.src='{0}';
-            s=s.parentNode.insertBefore(g,s).nextSibling;
+            if (!hasScriptElement('{0}')){{
+                g=document.createElement('script');
+                g.type='text/javascript';
+                g.defer=false; 
+                g.async=false; 
+                g.src='{0}';
+                s=s.parentNode.insertBefore(g,s).nextSibling;
+            }}
             """.format(script)
         code+="})();"
         ipythonDisplay(Javascript(code))
@@ -192,11 +206,13 @@ class Display(object):
                                     if (content.data["application/javascript"]){{
                                         $('#wrapperJS{1}').html("<script type=\\\"text/javascript\\\">"+content.data["application/javascript"]+"</s" + "cript>");
                                     }}
-                                }}else{{
-                                    return alert("An error occurred while executing the command");
+                                }}else if (msg_type === "error") {{
+                                    var errorHTML="<p>"+content.ename+"</p>";
+                                    errorHTML+="<p>"+content.evalue+"</p>";
+                                    errorHTML+="<pre>" + content.traceback+"</pre>";
+                                    $('#wrapperHTML{1}').html(errorHTML);
                                 }}
                                 console.log("msg", msg);
-                                $('#wrapper{1}').html(text)
                             }}
                         }}
                     }}
