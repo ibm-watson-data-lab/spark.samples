@@ -15,17 +15,26 @@
 # -------------------------------------------------------------------------------
 from abc import ABCMeta,abstractmethod
 from IPython.display import display as ipythonDisplay, HTML, Javascript
+from .constants import *
 import sys
 import uuid
+from collections import OrderedDict
 
 handlers=[]
+defaultHandler=None
 globalMenuInfos={}
-def registerDisplayHandler(handlerMetadata):
+def registerDisplayHandler(handlerMetadata, isDefault=False):
+    global defaultHandler
+    if isDefault and defaultHandler is None:
+        defaultHandler=handlerMetadata        
     handlers.append(handlerMetadata)
+    
 def getSelectedHandler(handlerId, entity):
     if handlerId is not None:
         return globalMenuInfos[handlerId]['handler']
     else:
+        if defaultHandler is not None:
+            return defaultHandler
         #get the first handler that can render this object
         for handler in handlers:
             menuInfos = handler.getMenuInfo(entity)
@@ -127,8 +136,10 @@ class Display(object):
         if self.noChrome:
             return ""
         
-        menuTree=dict()    
-        for handler in handlers:
+        menuTree=OrderedDict()
+        for catId in ActionCategories.CAT_INFOS.keys():
+            menuTree[catId]=[]    
+        for handler in handlers+[DownloadMeta()]:
             for menuInfo in handler.getMenuInfo(self.entity):
                 categoryId=menuInfo['categoryId']
                 if categoryId is None:
@@ -138,22 +149,24 @@ class Display(object):
                 else:
                     menuTree[categoryId].append(menuInfo) 
         
-        html=""
+        html="""
+            <div class="btn-group" role="group" style="margin-bottom:4px">
+        """
         for key, menuInfoList in menuTree.iteritems():
             if len(menuInfoList)==1:
                 html+="""
-                    <a class="btn btn-small display-type-button active" id="menu{0}" title="{1}">
+                    <a class="btn btn-small btn-default display-type-button" id="menu{0}" title="{1}">
                         <i class="fa {2}"></i>
                     </a>
                     {3}
                 """.format(self.getPrefix(menuInfoList[0]), menuInfoList[0]['title'], menuInfoList[0]['icon'], self._getMenuHandlerScript(menuInfoList[0]))
-            else:
+            elif len(menuInfoList)>1:
                 html+="""
                     <div class="btn-group btn-small" style="padding-left: 4px; padding-right: 4px;">
-                        <a class="btn btn-small display-type-button" title="{0}" style="text-decoration:none">
-                            <i class="{1}"></i>
+                        <a class="btn btn-small display-type-button btn-default" title="{0}" style="text-decoration:none">
+                            <i class="fa {1}"></i>
                         </a>
-                        <a class="btn btn-small dropdown-toggle" data-toggle="dropdown" style="padding-left: 6px; padding-right: 6px">
+                        <a class="btn btn-small dropdown-toggle btn-default" data-toggle="dropdown">
                             <b class="caret"></b>
                         </a>
                         <div class="dropdown-menu" role="menu">
@@ -177,6 +190,7 @@ class Display(object):
                     </div>
                 """
         html+="""
+            </div>
             <div id="wrapperJS{0}"></div>
             <div id="wrapperHTML{0}">
         """.format(self.getPrefix())
@@ -231,22 +245,45 @@ class Display(object):
         return self.callerText[:k]+",handlerId='"+menuInfo['id'] + "'" + self.callerText[k:]
         
     def getCategoryTitle(self,catId):
-        if catId == "Table":
-            return "Table"
-        elif catId == "Map":
-            return "Map"
-        else:
-            return ""
+        if catId in ActionCategories.CAT_INFOS:
+            return ActionCategories.CAT_INFOS[catId]['title']
+        elif catId == "Download":
+            return "Stash dataset"
+        return ""
             
     def getCategoryIconClass(self,catId):
-        if catId == "Table":
-            return "fa-table"
-        elif catId == "Map":
-            return "fa-map"
-        else:
-            return ""
+        if catId in ActionCategories.CAT_INFOS:
+            return ActionCategories.CAT_INFOS[catId]['icon-class']
+        elif catId == "Download":
+            return "fa-cloud-download"
+        return ""
         
     def _wrapAfterHtml(self):
         if ( self.noChrome ):
             return ""
         return "</div>"
+        
+        
+class DownloadMeta(DisplayHandlerMeta):
+    @addId
+    def getMenuInfo(self,entity):
+        clazz = entity.__class__.__name__
+        if clazz == "DataFrame":
+            return [
+                {"categoryId": "Download", "title": "Download as CSV", "icon": "fa-download", "id": "downloadCSV"},
+                {"categoryId": "Download", "title": "Stash to Cloudant", "icon": "fa-cloud", "id": "downloadCloudant"},
+                {"categoryId": "Download", "title": "Stash to Object Storage", "icon": "fa-suitcase", "id": "downloadSwift"}
+            ]
+        else:
+            return []
+    def newDisplayHandler(self,entity):
+        return DownloadHandler(entity)
+
+class DownloadHandler(Display):
+    def doRender(self, handlerId):
+        entity=self.entity
+            
+        self._addHTML("""
+            <p><b>Sorry, but download is not yet implemented. Please check back often!</b></p>
+        """
+        )

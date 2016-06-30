@@ -13,7 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # -------------------------------------------------------------------------------
+from collections import OrderedDict
+class ActionCategories(object):
+    TABLE = "Table"
+    MAP = "Map"
+    CHART = "Chart"
 
-from .display import Display
-from ..display import chart
-from pixiedust.display.printEx import *
+    CAT_INFOS = OrderedDict([
+        (TABLE, {"title": "Table", "icon-class": "fa-table"}),
+        (CHART, {"title": "Chart", "icon-class": "fa-line-chart"}),
+        (MAP,   {"title": "Map", "icon-class": "fa-map"})
+    ])

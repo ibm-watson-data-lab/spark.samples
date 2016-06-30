@@ -14,6 +14,16 @@
 # limitations under the License.
 # -------------------------------------------------------------------------------
 
-from .display import Display
-from ..display import chart
-from pixiedust.display.printEx import *
+from ..display import Display
+from pyspark.sql import DataFrame
+    
+class ChartDisplay(Display):
+    def doRender(self, handlerId):
+        entity=self.entity
+            
+        self._addHTML("""
+            <p><b>Sorry, but this visualization is not yet implemented. Please check back often!</b></p>
+        """
+        )
+        
+        

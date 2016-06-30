@@ -14,25 +14,25 @@
 # limitations under the License.
 # -------------------------------------------------------------------------------
 
-from .display import TableDisplay
+from .display import ChartDisplay
 from ..display import *
 
-class TableDisplayMeta(DisplayHandlerMeta):
+class ChartDisplayMeta(DisplayHandlerMeta):
     @addId
     def getMenuInfo(self,entity):
         clazz = entity.__class__.__name__
         if clazz == "DataFrame":
             return [
-                {"categoryId": "Table", "title": "DataFrame Table", "icon": "fa-table", "id": "dataframe"}
-            ]
-        elif clazz == "GraphFrame":
-            return [
-                {"categoryId": "Table", "title": "Graph Vertices", "icon": "fa-location-arrow", "id":"vertices"},
-                {"categoryId": "Table", "title": "Graph Edges", "icon": "fa-link", "id":"edges"}
+                {"categoryId": "Chart", "title": "Bar Chart", "icon": "fa-bar-chart", "id": "barChart"},
+                {"categoryId": "Chart", "title": "Line Chart", "icon": "fa-line-chart", "id": "lineChart"},
+                {"categoryId": "Chart", "title": "Scatter Plot", "icon": "fa-table", "id": "scatterPlot"},
+                {"categoryId": "Chart", "title": "Pie Chart", "icon": "fa-pie-chart", "id": "pieChart"},
+                {"categoryId": "Chart", "title": "Map", "icon": "fa-map", "id": "mapChart"},
+                {"categoryId": "Chart", "title": "Histogram", "icon": "fa-table", "id": "histogram"}
             ]
         else:
             return []
     def newDisplayHandler(self,entity):
-        return TableDisplay(entity)
+        return ChartDisplay(entity)
 
-registerDisplayHandler(TableDisplayMeta(), isDefault=True)
+registerDisplayHandler(ChartDisplayMeta())
