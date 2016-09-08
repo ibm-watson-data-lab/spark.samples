@@ -52,41 +52,42 @@ object ToneAnalyzer extends Logging{
  
   def computeSentiment( client: Client, status:StatusAdapter, broadcastVar: Broadcast[Map[String,String]] ) : Sentiment = {
     logTrace("Calling sentiment from Watson Tone Analyzer: " + status.text)
-    //Get Sentiment on the tweet
-    val sentimentResults: String = 
-      EntityEncoder[String].toEntity("{\"text\": " + JSONObject.quote( status.text ) + "}" ).flatMap { 
-        entity =>
-          val s = broadcastVar.value.get("watson.tone.url").get + "/v3/tone?version=" + broadcastVar.value.get("watson.api.version").get
-          val toneuri: Uri = Uri.fromString( s ).getOrElse( null )
-          client(
-              Request( 
-                  method = Method.POST, 
-                  uri = toneuri,
-                  headers = Headers(
-                      Authorization(
-                        BasicCredentials(broadcastVar.value.get("watson.tone.username").get, broadcastVar.value.get("watson.tone.password").get)
-                      ),
-                      Header("Accept", "application/json; charset=utf-8"),
-                      Header("Content-Type", "application/json")
-                    ),
-                  body = entity.body
-              )
-          ).flatMap { response =>
-             if (response.status.code == 200 ) {
-              response.as[String]
-             } else {
-              println( "Error received from Watson Tone Analyzer. Code : " + response.status.code + " reason: " + response.status.reason )
-              null
-            }
-          }
-      }.run
     try{
-      upickle.read[DocumentTone](sentimentResults).document_tone
-    }catch{
-      case e:Throwable => {
-        e.printStackTrace()
-        null
+      //Get Sentiment on the tweet
+      val sentimentResults: String = 
+        EntityEncoder[String].toEntity("{\"text\": " + JSONObject.quote( status.text ) + "}" ).flatMap { 
+          entity =>
+            val s = broadcastVar.value.get("watson.tone.url").get + "/v3/tone?version=" + broadcastVar.value.get("watson.api.version").get
+            val toneuri: Uri = Uri.fromString( s ).getOrElse( null )
+            client(
+                Request( 
+                    method = Method.POST, 
+                    uri = toneuri,
+                    headers = Headers(
+                        Authorization(
+                          BasicCredentials(broadcastVar.value.get("watson.tone.username").get, broadcastVar.value.get("watson.tone.password").get)
+                        ),
+                        Header("Accept", "application/json; charset=utf-8"),
+                        Header("Content-Type", "application/json")
+                      ),
+                    body = entity.body
+                )
+            ).flatMap { response =>
+               if (response.status.code == 200 ) {
+                response.as[String]
+               } else {
+                println( "Error received from Watson Tone Analyzer. Code : " + response.status.code + " reason: " + response.status.reason )
+                null
+              }
+            }
+        }.run
+  
+        upickle.read[DocumentTone](sentimentResults).document_tone
+      }catch{
+        case e:Throwable => {
+          e.printStackTrace()
+          null
+        }
       }
     }
-  }
 }

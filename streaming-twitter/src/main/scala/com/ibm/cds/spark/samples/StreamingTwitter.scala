@@ -78,6 +78,7 @@ object StreamingTwitter extends Logging{
   }
   
   def startTwitterStreaming( sc: SparkContext, stopAfter: Duration = Seconds(0) ){
+    println("Starting twitter stream");
     if ( ssc != null ){
       println("Twitter Stream already running");
       println("Please use stopTwitterStreaming() first and try again");
@@ -85,6 +86,7 @@ object StreamingTwitter extends Logging{
     }
     
     if ( !config.validateConfiguration() ){
+      println("Unable to validate config")
       return;
     }
     

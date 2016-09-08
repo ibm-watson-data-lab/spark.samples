@@ -32,3 +32,5 @@ streaming-twitter/config/MessageHubYP.properties
 pixiedust/pixiedust.egg-info
 
 pixiedust/dist
+
+.DS_Store

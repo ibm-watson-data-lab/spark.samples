@@ -15,13 +15,15 @@ libraryDependencies ++= {
     "com.ibm" %% "couchdb-scala" % "0.5.3",
     "org.apache.kafka" % "kafka-log4j-appender" % "0.9.0.0",
     "org.apache.kafka" % "kafka-clients" % "0.9.0.0",
-    "org.apache.kafka" %% "kafka" % "0.9.0.0"
+    "org.apache.kafka" %% "kafka" % "0.9.0.0",
+    "com.google.guava" % "guava" % "14.0.1"
   )
 }
 
 assemblyMergeStrategy in assembly := {
   case PathList("org", "apache", "spark", xs @ _*) => MergeStrategy.first
   case PathList("scala", xs @ _*) => MergeStrategy.discard
+  case PathList("com", "ibm", "pixiedust", xs @ _*) => MergeStrategy.discard
   case PathList("META-INF", "maven", "org.slf4j", xs @ _* ) => MergeStrategy.first
   case x =>
     val oldStrategy = (assemblyMergeStrategy in assembly).value

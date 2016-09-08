@@ -1,3 +1,20 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.ibm.cds.spark.samples
 
 import scala.BigDecimal
@@ -34,6 +51,7 @@ import org.apache.spark.streaming.scheduler.StreamingListenerReceiverError
 import org.apache.spark.streaming.scheduler.StreamingListenerReceiverStarted
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.Logging
+import java.util.Arrays
 
 /**
  * @author dtaieb
@@ -48,15 +66,30 @@ object MessageHubStreamingTwitter extends Logging{
   
   final val KAFKA_TOPIC_TOP_HASHTAGS = "topHashTags"
   final val KAFKA_TOPIC_TONE_SCORES = "topHashTags.toneScores"
+  final val KAFKA_TOPIC_TOTAL_TWEETS_PROCESSED = "total_tweets"
   
   //Logger.getLogger("org.apache.kafka").setLevel(Level.ALL)
   //Logger.getLogger("kafka").setLevel(Level.ALL)
   Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
 
   def main(args: Array[String]): Unit = {
+    println("Printing arguments: ");
+    args.foreach {  println }
+    
+    if(args.length>0 && System.getProperty("DEMO_CONFIG_PATH") == null ){
+      //On Spark Service, input files are passed as parameters, if available, we assume first parameter is config file
+      System.setProperty("DEMO_CONFIG_PATH", args(0))
+    }
     val conf = new SparkConf().setAppName("Spark Streaming Twitter + Watson with MessageHub/Kafka Demo")
     val sc = new SparkContext(conf)
     startTwitterStreaming(sc);
+    
+    if(ssc!=null){
+      //When running as stand alone app, we call awaitTermination to make sure the JVM doesn't exit prematurely due to the fact 
+      //that all non-daemon threads have terminated. Note: Don't call awaitTermination directly from startTwitterStreaming as it can be run 
+      //From Notebook
+      ssc.awaitTermination()
+    }
   }
   
   //Hold configuration key/value pairs
@@ -89,7 +122,7 @@ object MessageHubStreamingTwitter extends Logging{
     }
     
     //Make sure the topics are already created
-    kafkaProps.createTopicsIfNecessary( KAFKA_TOPIC_TONE_SCORES, KAFKA_TOPIC_TOP_HASHTAGS )
+    kafkaProps.createTopicsIfNecessary( KAFKA_TOPIC_TONE_SCORES, KAFKA_TOPIC_TOP_HASHTAGS, KAFKA_TOPIC_TOTAL_TWEETS_PROCESSED )
     
     val kafkaProducer = new org.apache.kafka.clients.producer.KafkaProducer[String, String]( kafkaProps.toImmutableMap ); 
     
@@ -195,6 +228,24 @@ object MessageHubStreamingTwitter extends Logging{
    
    val delimTagTone = "-%!"
    val delimToneScore = ":%@"
+   val statsStream = rowTweets.map { eTweet => ("total_tweets", 1L) }
+      .reduceByKey( _+_ )
+      .updateStateByKey( (a:Seq[Long], b:Option[Long] ) => {
+        var runningCount=b.getOrElse(0L)
+        a.foreach { v => runningCount=runningCount+v }
+        Some(runningCount)
+      })
+   statsStream.foreachRDD( rdd =>{
+     queue.synchronized{
+       queue+=((KAFKA_TOPIC_TOTAL_TWEETS_PROCESSED, TweetsMetricJsonSerializer.serialize(rdd.collect())))
+		   try{
+			   queue.notify
+		   }catch{
+		     case e:Throwable=>logError(e.getMessage, e)
+		   }
+     }
+   })
+   
    val metricsStream = rowTweets.flatMap { eTweet => {
      val retList = ListBuffer[String]()
      for ( tag <- eTweet.text.split("\\s+") ){
@@ -247,13 +298,13 @@ object MessageHubStreamingTwitter extends Logging{
      val topHashTags = rdd.sortBy( f => f._2._1, false ).take(5)
      if ( !topHashTags.isEmpty){
        queue.synchronized{
-         queue += (("topHashTags", TweetsMetricJsonSerializer.serialize(topHashTags.map( f => (f._1, f._2._1 )))))
-         queue += (("topHashTags.toneScores", ToneScoreJsonSerializer.serialize(topHashTags)))
-           try{
-             queue.notify
-           }catch{
-             case e:Throwable=>logError(e.getMessage, e)
-           }
+         queue += ((KAFKA_TOPIC_TOP_HASHTAGS, TweetsMetricJsonSerializer.serialize(topHashTags.map( f => (f._1, f._2._1 )))))
+         queue += ((KAFKA_TOPIC_TONE_SCORES, ToneScoreJsonSerializer.serialize(topHashTags)))
+         try{
+           queue.notify
+         }catch{
+           case e:Throwable=>logError(e.getMessage, e)
+         }
        }
      }
    })

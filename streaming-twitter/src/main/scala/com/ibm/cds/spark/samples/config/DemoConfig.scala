@@ -11,7 +11,7 @@ import org.apache.spark.SparkContext
  * @author dtaieb
  */
 
-class DemoConfig extends Serializable{  
+class DemoConfig() extends Serializable{  
   
   //Hold configuration key/value pairs
   var config = scala.collection.mutable.Map[String, String](
@@ -29,7 +29,8 @@ class DemoConfig extends Serializable{
       registerConfigKey("watson.tone.username" ),
       registerConfigKey("watson.tone.password" ),
       registerConfigKey("watson.api.version", "2016-02-11"),
-      registerConfigKey("cloudant.save", "false" )
+      registerConfigKey("cloudant.save", "false" ),
+      registerConfigKey(DemoConfig.CHECKPOINT_DIR_KEY)
   )
   
   private def getKeyOrFail(key:String):String={
@@ -47,7 +48,7 @@ class DemoConfig extends Serializable{
   def set_hadoop_config(sc:SparkContext){
     val prefix = "fs.swift.service." + getKeyOrFail("name") 
     val hconf = sc.hadoopConfiguration
-    hconf.set(prefix + ".auth.url", getKeyOrFail("auth_url")+"/v2.0/tokens")
+    hconf.set(prefix + ".auth.url", getKeyOrFail("auth_url")+"/v3/auth/tokens")
     hconf.set(prefix + ".auth.endpoint.prefix", "endpoints")
     hconf.set(prefix + ".tenant", getKeyOrFail("project_id"))
     hconf.set(prefix + ".username", getKeyOrFail("user_id"))
@@ -66,8 +67,12 @@ class DemoConfig extends Serializable{
   
   {
     //Load config from property file if specified
-    val configPath = System.getenv("DEMO_CONFIG_PATH");
+    val configPath = Option(System.getProperty("DEMO_CONFIG_PATH") ).orElse( Option(System.getenv("DEMO_CONFIG_PATH")))
+      .orElse( Option(System.getProperty("spark.service.user.DEMO_CONFIG_PATH") )).orElse(Option(System.getenv("spark.service.user.DEMO_CONFIG_PATH") ))
+      .getOrElse(null)
+    println("ConfigPath is: " + configPath )
     if ( configPath != null ){
+      println("Loading config from DEMO_CONFIG_PATH env variable: " + configPath)
       val props = new java.util.Properties
       var fis:InputStream = null
       try{
@@ -135,4 +140,6 @@ class DemoConfig extends Serializable{
   }
 }
 
-object DemoConfig extends DemoConfig
+object DemoConfig extends DemoConfig{
+  final val CHECKPOINT_DIR_KEY = "checkpointDir"
+}

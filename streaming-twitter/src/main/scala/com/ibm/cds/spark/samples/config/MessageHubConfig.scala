@@ -121,7 +121,7 @@ class MessageHubConfig extends DemoConfig{
 }
 
 object MessageHubConfig{
-  final val CHECKPOINT_DIR_KEY = "checkpointDir"
+  final val CHECKPOINT_DIR_KEY = DemoConfig.CHECKPOINT_DIR_KEY
   final val KAFKA_TOPIC_TWEETS = "kafka.topic.tweet"    //Key for name of the kafka topic holding used for publishing the tweets
   final val KAFKA_USER_NAME = "kafka.user.name"
   final val KAFKA_USER_PASSWORD = "kafka.user.password"
