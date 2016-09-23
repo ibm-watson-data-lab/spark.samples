@@ -70,7 +70,9 @@ class DemoConfig() extends Serializable{
     val configPath = Option(System.getProperty("DEMO_CONFIG_PATH") ).orElse( Option(System.getenv("DEMO_CONFIG_PATH")))
       .orElse( Option(System.getProperty("spark.service.user.DEMO_CONFIG_PATH") )).orElse(Option(System.getenv("spark.service.user.DEMO_CONFIG_PATH") ))
       .getOrElse(null)
-    println("ConfigPath is: " + configPath )
+    if (configPath != null ){
+      println("ConfigPath is: " + configPath )
+    }
     if ( configPath != null ){
       println("Loading config from DEMO_CONFIG_PATH env variable: " + configPath)
       val props = new java.util.Properties

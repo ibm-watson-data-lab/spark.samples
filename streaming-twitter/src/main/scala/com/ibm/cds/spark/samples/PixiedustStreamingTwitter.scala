@@ -50,6 +50,8 @@ import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.HashPartitioner
 import twitter4j.Status
 import org.codehaus.jettison.json.JSONObject
+import org.apache.spark.AccumulableParam
+import org.apache.spark.streaming.StreamingContextState
 
 /* @author dtaieb
  * Twitter+Watson sentiment analysis app powered by Pixiedust
@@ -154,104 +156,7 @@ object PixiedustStreamingTwitter extends ChannelReceiver() with Logging{
     
     ssc.start()
     
-    sendLog("Twitter stream started");   
-    
-/**    
-    
-    //Broadcast the config to each worker node
-    val broadcastVar = sc.broadcast(config.toImmutableMap)
-    
-    var canStopTwitterStream = true
-    var batchesProcessed=0
-    
-    ssc = new StreamingContext( sc, Seconds(5) )
-    
-    
-    
-    try{
-      sqlContext = new SQLContext(sc)
-      val keys = config.getConfig("tweets.key").split(",");
-      var stream = org.apache.spark.streaming.twitter.TwitterUtils.createStream( ssc, None );
-      
-      if ( schemaTweets == null ){
-        val schemaString = "author date lang text lat:double long:double"
-        schemaTweets =
-          StructType(
-            schemaString.split(" ").map(
-              fieldName => {
-                val ar = fieldName.split(":")
-                StructField(
-                    ar.lift(0).get, 
-                    ar.lift(1).getOrElse("string") match{
-                      case "int" => IntegerType
-                      case "double" => DoubleType
-                      case _ => StringType
-                    },
-                    true)
-              }
-            ).union( 
-                ToneAnalyzer.sentimentFactors.map( f => StructField( f._1, DoubleType )).toArray[StructField]
-            )
-          )
-      }
-      val tweets = stream.filter { status => 
-        Option(status.getUser).flatMap[String] { 
-          u => Option(u.getLang) 
-        }.getOrElse("").startsWith("en") && CharMatcher.ASCII.matchesAllOf(status.getText) && ( keys.isEmpty || keys.exists{status.getText.contains(_)})
-      }
-      
-      lazy val client = PooledHttp1Client()
-      val rowTweets = tweets.map(status=> {
-        val sentiment = ToneAnalyzer.computeSentiment( client, status, broadcastVar )
-        
-        var colValues = Array[Any](
-          status.getUser.getName, //author
-          status.getCreatedAt.toString,   //date
-          status.getUser.getLang,  //Lang
-          status.getText,               //text
-          Option(status.getGeoLocation).map{ _.getLatitude}.getOrElse(0.0),      //lat
-          Option(status.getGeoLocation).map{_.getLongitude}.getOrElse(0.0)    //long
-          //exception
-        )
-        
-        var scoreMap : Map[String, Double] = Map()
-        if ( sentiment != null ){
-          for( toneCategory <- Option(sentiment.tone_categories).getOrElse( Seq() )){
-            for ( tone <- Option( toneCategory.tones ).getOrElse( Seq() ) ){
-              scoreMap.put( tone.tone_id, tone.score )
-            }
-          }
-        }
-             
-        colValues = colValues ++ ToneAnalyzer.sentimentFactors.map { f => (BigDecimal(scoreMap.get(f._2).getOrElse(0.0)).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble) * 100.0  }
-        send("tweets", "{\"author\": \"" + status.getUser.getName + "\", \"text\":\"bla\", \"sentiment\":\"sadness\" }")
-        //Return [Row, (sentiment, status)]
-        (Row(colValues.toArray:_*),(sentiment, status))
-      })
-
-      rowTweets.foreachRDD( rdd => {
-        if(batchesProcessed==0){
-          canStopTwitterStream=false
-        }
-        try{
-          if( rdd.count > 0 ){
-            batchesProcessed += 1
-            workingRDD = sc.parallelize( rdd.map( t => t._1 ).collect()).union( workingRDD )
-          }
-        }catch{
-          case e: InterruptedException=>//Ignore
-          case e: Exception => sendLog(e.getMessage)
-        }finally{
-            canStopTwitterStream = true
-        }        
-      })
-
-    }catch{
-      case e : Exception => sendLog(e.getMessage )
-      return
-    }
-    
-    */
+    sendLog("Twitter stream started");
   }
   
   def stopStreaming(){
@@ -286,6 +191,26 @@ object PixiedustStreamingTwitter extends ChannelReceiver() with Logging{
       }.getOrElse("").startsWith("en") && CharMatcher.ASCII.matchesAllOf(status.getText) && ( keys.isEmpty || keys.exists{key => status.getText.toLowerCase.contains(key.toLowerCase)})
     }
     
+    val tweetAccumulator = sc.accumulable(Array[(String,String)]())(TweetsAccumulatorParam)
+    
+    new Thread( new Runnable() {
+      def run(){
+        try{
+          while(ssc!=null && ssc.getState() != StreamingContextState.STOPPED ){
+            val accuValue = tweetAccumulator.value
+            if ( accuValue.size > 0 ){
+              tweetAccumulator.setValue(Array[(String,String)]() )
+              accuValue.foreach( v => send(v._1, v._2) )
+            }
+            Thread.sleep( 1000L )
+          }
+          System.out.println("Stopping the accumulator thread")
+        }catch{
+          case e:Throwable => e.printStackTrace()
+        }
+      }
+    },"Accumulator").start
+    
     val rowTweets = tweets.map(status=> {
       lazy val client = PooledHttp1Client()
       val sentiment = ToneAnalyzer.computeSentiment( client, status, broadcastVar )
@@ -300,9 +225,12 @@ object PixiedustStreamingTwitter extends ChannelReceiver() with Logging{
       
       var jsonSentiment="{";
       scoreMap.foreach( t => jsonSentiment = jsonSentiment + (if (jsonSentiment.length() == 1) "" else ",") + "\"" + t._1 + "\":" + t._2)
-      jsonSentiment += "}"
-      send("tweets", "{\"author\": \"" + status.getUser.getName + "\", \"pic\":\"" + status.getUser.getOriginalProfileImageURLHttps + "\",\"text\":" + JSONObject.quote( status.getText ) 
-          + ", \"sentiment\": " + jsonSentiment + "}")
+      jsonSentiment += "}";
+      val sendValue:String = "{\"author\": \"" + 
+            status.getUser.getName + "\", \"pic\":\"" + status.getUser.getOriginalProfileImageURLHttps +
+            "\",\"text\":" + JSONObject.quote( status.getText ) + ", \"sentiment\": " + jsonSentiment + "}"
+            
+      tweetAccumulator+=("tweets",sendValue)
       
       EnrichedTweet( 
           status.getUser.getName,
@@ -379,9 +307,24 @@ object PixiedustStreamingTwitter extends ChannelReceiver() with Logging{
    metricsStream.foreachRDD( rdd =>{
      val topHashTags = rdd.sortBy( f => f._2._1, false ).take(5)
      if ( !topHashTags.isEmpty){
-         send("topHashtags", TweetsMetricJsonSerializer.serialize(topHashTags.map( f => (f._1, f._2._1 ))))
-         send("toneScores", ToneScoreJsonSerializer.serialize(topHashTags))
+         tweetAccumulator+=("topHashtags", TweetsMetricJsonSerializer.serialize(topHashTags.map( f => (f._1, f._2._1 ))))
+         tweetAccumulator+=("toneScores", ToneScoreJsonSerializer.serialize(topHashTags))
      }
    })
+   
+  }
+}
+
+object TweetsAccumulatorParam extends AccumulableParam[Array[(String,String)], (String,String)]{
+  def zero(initialValue:Array[(String,String)]):Array[(String,String)] = {
+    Array()
+  }
+  
+  def addInPlace(s1:Array[(String,String)], s2:Array[(String,String)]):Array[(String,String)] = {
+    s1 ++ s2
+  }
+  
+  def addAccumulator(current:Array[(String,String)], s:(String,String)):Array[(String,String)] = {
+    current :+ s
   }
 }

@@ -34,3 +34,9 @@ pixiedust/pixiedust.egg-info
 pixiedust/dist
 
 .DS_Store
+
+streaming-twitter/conf/log4j.properties
+
+streaming-twitter/conf/log4j.properties.template
+
+streaming-twitter/src/main/scala/resources/log4j.properties
