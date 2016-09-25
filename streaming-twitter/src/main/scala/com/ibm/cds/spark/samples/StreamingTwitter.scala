@@ -85,7 +85,7 @@ object StreamingTwitter extends Logging{
       return;
     }
     
-    if ( !config.validateConfiguration() ){
+    if ( !config.validateConfiguration(DemoConfig.CHECKPOINT_DIR_KEY) ){
       println("Unable to validate config")
       return;
     }

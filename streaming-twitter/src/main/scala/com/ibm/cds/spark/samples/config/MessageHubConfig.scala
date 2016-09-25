@@ -67,8 +67,8 @@ class MessageHubConfig extends DemoConfig{
     super.registerConfigKey(key,default)
   }
   
-  override def validateConfiguration(ignorePrefix:String=null) : Boolean = {
-    val ret = super.validateConfiguration(ignorePrefix)
+  override def validateConfiguration(ignorePrefix:String*) : Boolean = {
+    val ret = super.validateConfiguration(ignorePrefix:_*)
     if ( ret ){
       //Create the jaas configuration
       MessageHubConfig.createJaasConfiguration(getConfig(MessageHubConfig.KAFKA_USER_NAME ), getConfig(MessageHubConfig.KAFKA_USER_PASSWORD) )

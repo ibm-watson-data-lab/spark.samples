@@ -113,13 +113,17 @@ class DemoConfig() extends Serializable{
   }
   
   //Validate configuration settings
-  def validateConfiguration(ignorePrefix:String=null) : Boolean = {
+  def validateConfiguration(ignorePrefix:String*) : Boolean = {
+    def ignoreKey( key: String ): Boolean = {
+      var o = ignorePrefix.find { p => p.startsWith( key ) };
+      o.isDefined
+    }
     var ret: Boolean = true;
     val saveToCloudant = config.get("cloudant.save").get.toBoolean
     config.foreach( (t:(String, Any)) => 
       if ( t._2 == null ){
         if ( saveToCloudant || !t._1.startsWith("cloudant")  ){
-          if ( ignorePrefix == null || !t._1.startsWith( ignorePrefix )){
+          if ( !ignoreKey( t._1) ){
             println(t._1 + " configuration not set. Use setConfig(\"" + t._1 + "\",<your Value>)"); 
             ret = false;
           }
@@ -130,7 +134,7 @@ class DemoConfig() extends Serializable{
     if ( ret ){
       config.foreach( (t:(String,Any)) => 
         try{
-          if ( t._1.startsWith( "twitter4j") && t._2 != null && (ignorePrefix==null || !t._1.startsWith( ignorePrefix ) ) ) {
+          if ( t._1.startsWith( "twitter4j") && t._2 != null && !ignoreKey(t._1) ) {
             System.setProperty( t._1, t._2.asInstanceOf[String] )
           }
         }catch{
