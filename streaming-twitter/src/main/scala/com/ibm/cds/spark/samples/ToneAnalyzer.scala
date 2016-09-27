@@ -67,8 +67,8 @@ object ToneAnalyzer extends Logging{
                         Authorization(
                           BasicCredentials(broadcastVar.value.get("watson.tone.username").get, broadcastVar.value.get("watson.tone.password").get)
                         ),
-                        Header("Accept", "application/json; charset=utf-8"),
-                        Header("Content-Type", "application/json")
+                        Header("Accept", "application/json"),
+                        Header("Content-Type", "application/json; charset=utf-8")
                       ),
                     body = entity.body
                 )

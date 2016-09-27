@@ -52,15 +52,14 @@ import twitter4j.Status
 import org.codehaus.jettison.json.JSONObject
 import org.apache.spark.AccumulableParam
 import org.apache.spark.streaming.StreamingContextState
+import org.apache.spark.sql.DataFrame
 
 /* @author dtaieb
  * Twitter+Watson sentiment analysis app powered by Pixiedust
  */
 object PixiedustStreamingTwitter extends ChannelReceiver() with Logging{
   var ssc: StreamingContext = null
-  var sqlContext: SQLContext = null
   var workingRDD: RDD[Row] = null
-  var schemaTweets : StructType = null
   //Hold configuration key/value pairs
   lazy val config = new DemoConfig
   lazy val logger: Logger = Logger.getLogger( "com.ibm.cds.spark.samples.PixiedustStreamingTwitter" )
@@ -82,6 +81,15 @@ object PixiedustStreamingTwitter extends ChannelReceiver() with Logging{
     val conf = new SparkConf().setAppName("Pixiedust Spark Streaming Twitter Demo")
     val sc = new SparkContext(conf)
     startStreaming();
+  }
+  
+  def createTwitterDataFrames(sqlContext: SQLContext) : DataFrame = {
+    if ( workingRDD == null || workingRDD.count <= 0 ){
+      println("No data receive. Please start the Twitter stream again to collect data")
+      return null
+    }
+ 
+    sqlContext.createDataFrame( workingRDD, schemaTweets )
   }
   
   class PixiedustStreamingListener extends org.apache.spark.streaming.scheduler.StreamingListener {
@@ -181,8 +189,6 @@ object PixiedustStreamingTwitter extends ChannelReceiver() with Logging{
     ssc;
   }
   
-  case class EnrichedTweet( author:String, date: String, lang: String, text: String, lat: Double, long: Double, sentimentScores: Map[String, Double])
-  
   def runAnalytics(sc:SparkContext, broadcastVar: Broadcast[scala.collection.immutable.Map[String,String]], stream:DStream[Status]){
     val keys = broadcastVar.value.get("tweets.key").get.split(",");
     val tweets = stream.filter { status => 
@@ -241,6 +247,12 @@ object PixiedustStreamingTwitter extends ChannelReceiver() with Logging{
           Option(status.getGeoLocation).map{ _.getLongitude}.getOrElse(0.0),          
           scoreMap
       )
+    })
+    
+    rowTweets.foreachRDD( rdd => {
+        if( rdd.count > 0 ){
+          workingRDD = SparkContext.getOrCreate().parallelize( rdd.map( t => t.toRow() ).collect()).union( workingRDD )
+        }
     })
    
    val delimTagTone = "-%!"

@@ -28,7 +28,7 @@ class DemoConfig() extends Serializable{
       registerConfigKey("watson.tone.url" ),
       registerConfigKey("watson.tone.username" ),
       registerConfigKey("watson.tone.password" ),
-      registerConfigKey("watson.api.version", "2016-02-11"),
+      registerConfigKey("watson.api.version", "2016-05-19"),
       registerConfigKey("cloudant.save", "false" ),
       registerConfigKey(DemoConfig.CHECKPOINT_DIR_KEY)
   )

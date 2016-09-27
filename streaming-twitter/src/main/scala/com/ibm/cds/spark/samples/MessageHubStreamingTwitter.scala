@@ -100,8 +100,6 @@ object MessageHubStreamingTwitter extends Logging{
     kafkaProps
   }
   
-  case class EnrichedTweet( author:String, date: String, lang: String, text: String, lat: Double, long: Double, sentimentScores: Map[String, Double])
-  
   def startTwitterStreaming( sc: SparkContext, stopAfter: Duration = Seconds(0) ){
     if ( ssc != null ){
       println("Twitter Stream already running");
