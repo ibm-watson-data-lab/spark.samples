@@ -233,13 +233,16 @@ object PixiedustStreamingTwitter extends ChannelReceiver() with Logging{
       scoreMap.foreach( t => jsonSentiment = jsonSentiment + (if (jsonSentiment.length() == 1) "" else ",") + "\"" + t._1 + "\":" + t._2)
       jsonSentiment += "}";
       val sendValue:String = "{\"author\": \"" + 
-            status.getUser.getName + "\", \"pic\":\"" + status.getUser.getOriginalProfileImageURLHttps +
+            status.getUser.getName + 
+            "\", \"userid\":\"" + status.getUser.getScreenName +
+            "\", \"pic\":\"" + status.getUser.getOriginalProfileImageURLHttps +
             "\",\"text\":" + JSONObject.quote( status.getText ) + ", \"sentiment\": " + jsonSentiment + "}"
             
       tweetAccumulator+=("tweets",sendValue)
       
       EnrichedTweet( 
           status.getUser.getName,
+          status.getUser.getScreenName,
           status.getCreatedAt.toString,          
           status.getUser.getLang,
           status.getText,

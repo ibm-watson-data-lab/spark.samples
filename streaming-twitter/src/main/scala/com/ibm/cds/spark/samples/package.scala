@@ -31,9 +31,9 @@ import org.apache.spark.sql.Row
 
 package object samples {
   
-  case class EnrichedTweet( author:String, date: String, lang: String, text: String, lat: Double, long: Double, sentimentScores: Map[String, Double]){
+  case class EnrichedTweet( author:String="", userid: String="", date: String, lang: String, text: String, lat: Double, long: Double, sentimentScores: Map[String, Double]){
     def toRow():Row={
-      var colValues = Array[Any](author,date,lang,text,lat,long)
+      var colValues = Array[Any](author,userid,date,lang,text,lat,long)
       val scores = for {
         (_,emotion)<-ToneAnalyzer.sentimentFactors
         score=sentimentScores.getOrElse(emotion, 0.0)
@@ -43,7 +43,7 @@ package object samples {
     }
   }
 	
-  val schemaString = "author date lang text lat:double long:double"
+  val schemaString = "author userid date lang text lat:double long:double"
 	val schemaTweets =
 			StructType(
 					schemaString.split(" ").map(

@@ -28,12 +28,13 @@ import twitter4j.Status
  * Deserialization adapters for Twitter4J Status
  */
 
-case class StatusAdapter(userName:String, userLang: String,createdAt:String,text:String, long:Double, lat:Double);
+case class StatusAdapter(userName:String, userId: String, userLang: String,createdAt:String,text:String, long:Double, lat:Double);
 
 object StatusAdapter{
   implicit def statusAdapterWrapper(status: Status) = 
       StatusAdapter(
-          status.getUser.getName, 
+          status.getUser.getName,
+          status.getUser.getScreenName,
           status.getUser.getLang,
           status.getCreatedAt.toString,
           status.getText,
@@ -73,6 +74,7 @@ class StatusDeserializer extends Deserializer[StatusAdapter]{
         val geo = Option(jsonObject.get("geo").orNull).getOrElse(Map.empty).asInstanceOf[Map[String,Any]]
         StatusAdapter(
           user.get("name").getOrElse("").asInstanceOf[String], 
+          user.get("userid").getOrElse("").asInstanceOf[String],
           user.get("lang").getOrElse("").asInstanceOf[String],
           jsonObject.get("created_at").getOrElse("").asInstanceOf[String],
           jsonObject.get("text").getOrElse("").asInstanceOf[String],

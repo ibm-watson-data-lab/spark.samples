@@ -215,6 +215,7 @@ object MessageHubStreamingTwitter extends Logging{
       
       EnrichedTweet( 
           status.userName, 
+          status.userId,
           status.createdAt, 
           status.userLang, 
           status.text, 

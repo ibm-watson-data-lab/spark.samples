@@ -109,7 +109,7 @@ object StreamingTwitter extends Logging{
       val stream = org.apache.spark.streaming.twitter.TwitterUtils.createStream( ssc, None );
       
       if ( schemaTweets == null ){
-        val schemaString = "author date lang text lat:double long:double"
+        val schemaString = "author userid date lang text lat:double long:double"
         schemaTweets =
           StructType(
             schemaString.split(" ").map(
@@ -141,6 +141,7 @@ object StreamingTwitter extends Logging{
         
         var colValues = Array[Any](
           status.getUser.getName, //author
+          status.getUser.getScreenName, //Userid
           status.getCreatedAt.toString,   //date
           status.getUser.getLang,  //Lang
           status.getText,               //text
