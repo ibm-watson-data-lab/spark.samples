@@ -25,6 +25,7 @@ Create a new app on your Twitter account and configure the OAuth credentials.
 <li>Click the <strong>Keys and Access Tokens</strong> tab.</li>
 <li>Scroll to the bottom of the page and click the <strong>Create My Access Tokens</strong> button.<br /></li>
 <li>Copy the <strong>Consumer Key</strong>, <strong>Consumer Secret</strong>, <strong>Access Token</strong>, and <strong>Access Token Secret</strong>. You will need them in a few minutes.
+
 <img src="https://developer.ibm.com/clouddataservices2/wp-content/uploads/sites/85/2015/09/twitter_app_keys.png" alt="twitter_keys"></li>
 </ol>
 
@@ -38,6 +39,7 @@ Provision the service and grab your credentials:
 
 
 4. On left side of the screen, click <strong>Service Credentials</strong>
+
 ![creds](https://developer.ibm.com/clouddataservices2/wp-content/uploads/sites/85/2015/10/tone_analyz_creds.png) 
 
 5. Copy the `username` and `password` values. 
