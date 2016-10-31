@@ -29,28 +29,6 @@ Create a new app on your Twitter account and configure the OAuth credentials.
 <img src="https://developer.ibm.com/clouddataservices2/wp-content/uploads/sites/85/2015/09/twitter_app_keys.png" alt="twitter_keys"></li>
 </ol>
 
-##Get Watson Tone Analyzer Credentials
-
-Provision the service and grab your credentials:
-
-1. In a new browser tab or window, open Bluemix, go to the top menu, and click <strong>Catalog</strong>.</li>
-2. In the search box, type <strong>Tone Analyzer</strong>.</li>
-3. Click the <strong>Tone Analyzer</strong> tile, then click <strong>Create</strong>. </li>
-
-
-4. On left side of the screen, click <strong>Service Credentials</strong>
-
-![creds](https://developer.ibm.com/clouddataservices2/wp-content/uploads/sites/85/2015/10/tone_analyz_creds.png) 
-
-5. Copy the `username` and `password` values. 
-<pre><code> "credentials": {
-       "url":"XXXXX",
-       "username":"XXXXX",
-       "password":"XXXXX"
-  }</code></pre>
- 
-
-
 ##Get Watson Personality Insights Credentials
 
 Provision the service and grab your credentials:
@@ -58,11 +36,23 @@ Provision the service and grab your credentials:
 1. Still in Bluemix, go to the top menu, and click <strong>Catalog</strong>.</li>
 2. In the search box, type <strong>Personality Insights</strong>.</li>
 3. Click the <strong>Personality Insights</strong> service tile, then click <strong>Create</strong>. </li>
+4. On left side of the screen, click <strong>Service Credentials</strong> and open or create credentials.
 
-
-4. On left side of the screen, click <strong>Service Credentials</strong>
+   ![creds](http://developer.ibm.com/clouddataservices/wp-content/uploads/sites/85/2016/10/pi_creds.png) 
 
 5. Copy the `username` and `password` values.
+
+
+##Get Watson Tone Analyzer Credentials
+
+Provision the service and grab your credentials:
+
+1. In a new browser tab or window, open Bluemix, go to the top menu, and click <strong>Catalog</strong>.</li>
+2. In the search box, type <strong>Tone Analyzer</strong>.</li>
+3. Click the <strong>Tone Analyzer</strong> tile, then click <strong>Create</strong>. </li>
+4. On left side of the screen, click <strong>Service Credentials</strong> and open or create credentials.
+5. Copy the `username` and `password` values. 
+
 
 
 ##Paste Credentials into the Notebook
