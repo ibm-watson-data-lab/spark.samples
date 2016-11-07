@@ -4,7 +4,7 @@ This repository contains sample that show you how get the most out of IBM Analyt
 
 ## Running a notebook in DSX
 
-More info and detailed instruction for DSX can be found their [documentation](http://datascience.ibm.com/docs/content/getting-started/get-started.html).
+More info and detailed instruction for DSX can be found its [documentation](http://datascience.ibm.com/docs/content/getting-started/get-started.html).
  
 1. Log into DSX
 2. Go to __My Projects__
