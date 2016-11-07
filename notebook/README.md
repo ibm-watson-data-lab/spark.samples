@@ -1,6 +1,6 @@
 # Sample Notebooks
 
-This repository contains sample that show you how get the most out of IBM Analytics for Apache Spark. You may run these notebooks in a locally set up notebook environment (i.e., [Jupyter Notebook](https://jupyter.readthedocs.io/en/latest/install.html)) or through the [IBM Data Science Expereince (DSX)](http://datascience.ibm.com/).  
+This repository contains sample that show you how get the most out of IBM Analytics for Apache Spark. You may run these notebooks in a locally set up notebook environment (i.e., [Jupyter Notebook](https://jupyter.readthedocs.io/en/latest/install.html)) or through the [IBM Data Science Experience (DSX)](http://datascience.ibm.com/).  
 
 ## Service Credentials
 
