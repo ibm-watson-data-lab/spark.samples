@@ -2,6 +2,11 @@
 
 This repository contains sample that show you how get the most out of IBM Analytics for Apache Spark. You may run these notebooks in a locally set up notebook environment (i.e., [Jupyter Notebook](https://jupyter.readthedocs.io/en/latest/install.html)) or through the [IBM Data Science Expereince (DSX)](http://datascience.ibm.com/).  
 
+## Service Credentials
+
+Some of the notebooks require credentials to various services (e.g., Twitter API, Watson Tone Analyzer, etc.). Instructions for provisioning these services and getting credentials are outlined here: [Set Up Services and Get Credentials](https://github.com/ibm-cds-labs/spark.samples/blob/master/notebook/Get%20Service%20Credentials%20for%20Twitter%20Sentiment%20with%20Watson%20TA%20and%20PI.md)  
+
+
 ## Running a notebook in DSX
 
 More info and detailed instruction for DSX can be found its [documentation](http://datascience.ibm.com/docs/content/getting-started/get-started.html).
@@ -27,4 +32,4 @@ More info and detailed instruction for DSX can be found its [documentation](http
 	5. Select an existing __Spark Service__ to associate with the notebook
 	6. Click __Create Notebook__
 
-5. Once in the notebook, follow it's instructions for running the notebook 
+5. Once in the notebook, follow it's instructions for running the notebook  
