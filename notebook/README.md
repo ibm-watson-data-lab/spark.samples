@@ -1,6 +1,6 @@
 # Sample Notebooks
 
-This repository contains sample that show you how get the most out of IBM Analytics for Apache Spark. You may run these notebooks in a locally set up notebook environment (i.e., [Jupyter Notebook](https://jupyter.readthedocs.io/en/latest/install.html)) or through the [IBM Data Science Experience (DSX)](http://datascience.ibm.com/).  
+This repository contains sample notebooks that show you how get the most out of IBM Analytics for Apache Spark. You may run these notebooks in a locally set up notebook environment (i.e., [Jupyter Notebook](https://jupyter.readthedocs.io/en/latest/install.html)) or through the [IBM Data Science Experience (DSX)](http://datascience.ibm.com/).  
 
 ## Service Credentials
 
@@ -11,8 +11,8 @@ Some of the notebooks require credentials to various services (e.g., Twitter API
 
 More info and detailed instruction for DSX can be found its [documentation](http://datascience.ibm.com/docs/content/getting-started/get-started.html).
  
-1. Log into DSX
-2. Go to __My Projects__
+1. Log into DSX  
+2. Go to __My Projects__  
 3. Select an existing project or create a new project  
 
 	##### To set up a new project
