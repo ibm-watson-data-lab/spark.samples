@@ -4,7 +4,7 @@ This repository contains sample notebooks that show you how get the most out of 
 
 ## Service Credentials
 
-Some of the notebooks require credentials to various services (e.g., Twitter API, Watson Tone Analyzer, etc.). Instructions for provisioning these services and getting credentials are outlined here: [Set Up Services and Get Credentials](https://github.com/ibm-cds-labs/spark.samples/blob/master/notebook/Get%20Service%20Credentials%20for%20Twitter%20Sentiment%20with%20Watson%20TA%20and%20PI.md)  
+Some of the notebooks require credentials to various services (e.g., Twitter API, Watson Tone Analyzer, etc.). Instructions for provisioning these services and getting credentials are outlined here: [Set Up Services and Get Credentials](https://github.com/ibm-watson-data-lab/spark.samples/blob/master/notebook/Get%20Service%20Credentials%20for%20Twitter%20Sentiment%20with%20Watson%20TA%20and%20PI.md)  
 
 
 ## Running a notebook in DSX

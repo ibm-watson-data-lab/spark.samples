@@ -1,6 +1,6 @@
 #Set Up Services and Get Credentials
 
-These instructions accompany the [Twitter Sentiment analysis with Watson Tone Analyzer and Watson Personality Insights Notebook](https://github.com/ibm-cds-labs/spark.samples/tree/master/notebook). This sample notebook requires a connection to the following online services: 
+These instructions accompany the [Twitter Sentiment analysis with Watson Tone Analyzer and Watson Personality Insights Notebook](https://github.com/ibm-watson-data-lab/spark.samples/tree/master/notebook). This sample notebook requires a connection to the following online services: 
 
 - Twitter
 - Watson Tone Analyzer 
@@ -57,7 +57,7 @@ Provision the service and grab your credentials:
 
 ##Paste Credentials into the Notebook
 
-1. Return to your version of the [Twitter Sentiment analysis with Watson Tone Analyzer and Watson Personality Insights Notebook](https://github.com/ibm-cds-labs/spark.samples/tree/master/notebook)
+1. Return to your version of the [Twitter Sentiment analysis with Watson Tone Analyzer and Watson Personality Insights Notebook](https://github.com/ibm-watson-data-lab/spark.samples/tree/master/notebook)
 
 2. Paste all the credentials you just collected into the notebook, replacing the XXXXs for each item:
 
