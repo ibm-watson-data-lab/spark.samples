@@ -1,4 +1,4 @@
-#Set Up Services and Get Credentials
+# Set Up Services and Get Credentials
 
 These instructions accompany the [Twitter Sentiment analysis with Watson Tone Analyzer and Watson Personality Insights Notebook](https://github.com/ibm-watson-data-lab/spark.samples/tree/master/notebook). This sample notebook requires a connection to the following online services: 
 
@@ -8,7 +8,7 @@ These instructions accompany the [Twitter Sentiment analysis with Watson Tone An
 
 Follow these steps to set up, retrieve, and enter credentials for all 3 services:
 
-##Get OAuth Credentials for Twitter
+## Get OAuth Credentials for Twitter
 
 
 Create a new app on your Twitter account and configure the OAuth credentials.
@@ -29,7 +29,7 @@ Create a new app on your Twitter account and configure the OAuth credentials.
 <img src="https://developer.ibm.com/clouddataservices2/wp-content/uploads/sites/85/2015/09/twitter_app_keys.png" alt="twitter_keys"></p></li>
 </ol>
 
-##Get Watson Personality Insights Credentials
+## Get Watson Personality Insights Credentials
 
 Provision the service and grab your credentials:
 
@@ -43,7 +43,7 @@ Provision the service and grab your credentials:
 5. Copy the `username` and `password` values.
 
 
-##Get Watson Tone Analyzer Credentials
+## Get Watson Tone Analyzer Credentials
 
 Provision the service and grab your credentials:
 
@@ -55,7 +55,7 @@ Provision the service and grab your credentials:
 
 
 
-##Paste Credentials into the Notebook
+## Paste Credentials into the Notebook
 
 1. Return to your version of the [Twitter Sentiment analysis with Watson Tone Analyzer and Watson Personality Insights Notebook](https://github.com/ibm-watson-data-lab/spark.samples/tree/master/notebook)
 
